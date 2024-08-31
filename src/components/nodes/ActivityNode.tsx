@@ -1,0 +1,277 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronDown, Link, Thermometer, Plus, X } from "lucide-react";
+
+interface AdditionalInfo {
+  text: string;
+  tags: string[];
+}
+
+interface ActivityNodeProps {
+  data: {
+    verbPhrase: string;
+    additionalInfo: AdditionalInfo[];
+    onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => void;
+  };
+}
+
+const tagColors = {
+  R: 'bg-pink-200 text-pink-800',
+  A: 'bg-green-200 text-green-800',
+  C: 'bg-yellow-200 text-yellow-800',
+  I: 'bg-blue-200 text-blue-800',
+};
+
+const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
+  const [isEditing, setIsEditing] = useState(data.verbPhrase === '');
+  const [text, setText] = useState(data.verbPhrase);
+  const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo[]>(data.additionalInfo || []);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const additionalInfoRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const handleClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (data.onChange) {
+      data.onChange(text, additionalInfo);
+    }
+  };
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setText(event.target.value);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      setIsEditing(false);
+      setFocusedIndex(null);
+      setEditingTagIndex(null);
+      if (data.onChange) {
+        data.onChange(text, additionalInfo);
+      }
+    }
+  };
+
+  const handleAdditionalInfoChange = (index: number, value: string) => {
+    const newAdditionalInfo = [...additionalInfo];
+    newAdditionalInfo[index] = { ...newAdditionalInfo[index], text: value };
+    setAdditionalInfo(newAdditionalInfo);
+    if (data.onChange) {
+      data.onChange(text, newAdditionalInfo);
+    }
+  };
+
+  const handleAdditionalInfoFocus = (index: number) => {
+    setFocusedIndex(index);
+    setEditingTagIndex(index);
+  };
+
+  const handleAdditionalInfoBlur = () => {
+    setFocusedIndex(null);
+    // タグ編集中はフォーカスを外さない
+    if (editingTagIndex === null) {
+      setEditingTagIndex(null);
+    }
+  };
+
+  const addAdditionalInfo = () => {
+    if (additionalInfo.length < 4) {
+      const newIndex = additionalInfo.length;
+      setAdditionalInfo([...additionalInfo, { text: '', tags: [] }]);
+      setFocusedIndex(newIndex);
+      setEditingTagIndex(newIndex);
+      // 次のレンダリングサイクルで新しい要素にフォーカスを当てる
+      setTimeout(() => {
+        additionalInfoRefs.current[newIndex]?.focus();
+      }, 0);
+    }
+  };
+
+  const removeAdditionalInfo = (index: number) => {
+    const newAdditionalInfo = additionalInfo.filter((_, i) => i !== index);
+    setAdditionalInfo(newAdditionalInfo);
+    if (data.onChange) {
+      data.onChange(text, newAdditionalInfo);
+    }
+  };
+
+  const toggleTag = (index: number, tag: string) => {
+    const newAdditionalInfo = [...additionalInfo];
+    const currentTags = newAdditionalInfo[index].tags;
+    if (currentTags.includes(tag)) {
+      newAdditionalInfo[index].tags = currentTags.filter(t => t !== tag);
+    } else {
+      newAdditionalInfo[index].tags = [...currentTags, tag];
+    }
+    setAdditionalInfo(newAdditionalInfo);
+    if (data.onChange) {
+      data.onChange(text, newAdditionalInfo);
+    }
+  };
+
+  const handleTagClick = (index: number) => {
+    setEditingTagIndex(index);
+  };
+
+  // タグ編集モードを終了する関数
+  const finishTagEditing = () => {
+    setEditingTagIndex(null);
+  };
+
+  const handleOutsideClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest('.additional-info-item, .activity-text') === null) {
+      setFocusedIndex(null);
+      setEditingTagIndex(null);
+      setIsEditing(false);
+      if (data.onChange) {
+        data.onChange(text, additionalInfo);
+      }
+    }
+  };
+
+  const handleActivityTextClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    setIsEditing(true);
+    setFocusedIndex(null);
+    setEditingTagIndex(null);
+    if (data.onChange) {
+      data.onChange(text, additionalInfo);
+    }
+  };
+
+  return (
+    <div 
+      className="relative w-[300px] bg-white rounded-lg shadow-lg border-4 border-blue-500 overflow-hidden text-center"
+      onClick={handleOutsideClick}
+    >
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="absolute top-2 right-2 h-8 w-8 rounded-full p-0 z-10" aria-label="Open menu">
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[220px]">
+          <div className="grid gap-4">
+            <div className="flex items-center gap-2">
+              <Link className="h-4 w-4" />
+              <span>Support site</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Thermometer className="h-4 w-4" />
+              <span>Tech support script</span>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+      <div className="flex flex-col items-center justify-center px-4 py-3 border-b border-gray-200 h-48 activity-text">
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={text}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="text-xl font-bold text-center w-full h-full focus:outline-none"
+            placeholder="アクティビティを入力"
+          />
+        ) : (
+          <h2 
+            className="text-xl font-bold cursor-pointer h-full flex items-center justify-center" 
+            onClick={handleActivityTextClick}
+          >
+            {text || 'アクティビティを入力'}
+          </h2>
+        )}
+      </div>
+      <div className="p-0">
+        {additionalInfo.map((info, index) => (
+          <div key={index} className="additional-info-item border-b border-gray-200 last:border-b-0">
+            {focusedIndex === index || editingTagIndex === index ? (
+              // 編集モード
+              <div className="flex items-center justify-center px-1 py-1 h-12" onKeyDown={handleKeyDown}>
+                <div className="flex items-center justify-center w-full">
+                  <div className="flex space-x-0.5 mr-1">
+                    {['R', 'A', 'C', 'I'].map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(index, tag)}
+                        className={`w-6 h-6 rounded-full ${info.tags.includes(tag) ? tagColors[tag] : 'bg-gray-200'} text-sm font-bold`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    ref={el => additionalInfoRefs.current[index] = el}
+                    type="text"
+                    value={info.text}
+                    onChange={(e) => handleAdditionalInfoChange(index, e.target.value)}
+                    onFocus={() => handleAdditionalInfoFocus(index)}
+                    onBlur={handleAdditionalInfoBlur}
+                    className="w-[100px] px-1 py-0.5 mx-1 h-full overflow-y-auto focus:outline-none text-left text-base"
+                  />
+                  <Button 
+                    onClick={() => removeAdditionalInfo(index)} 
+                    className="p-0.5 h-6 w-6 rounded-full bg-white hover:bg-gray-100 flex-shrink-0"
+                  >
+                    <X className="h-4 w-4 text-black" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // 表示モード
+              <div 
+                className="flex items-center justify-center px-1 py-1 h-12 cursor-text"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAdditionalInfoFocus(index);
+                }}
+              >
+                <div className="flex space-x-0.5 mr-1 flex-shrink-0">
+                  {info.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className={`w-6 h-6 rounded-full ${tagColors[tag]} text-sm font-bold flex items-center justify-center`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-base">{info.text}</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {additionalInfo.length < 4 && (
+        <div className="px-4 py-2">
+          <Button 
+            onClick={(e) => {
+              e.stopPropagation();
+              addAdditionalInfo();
+            }} 
+            className="h-5 w-5 rounded-full p-0 bg-white hover:bg-gray-100"
+          >
+            <Plus className="h-3 w-3 text-black" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ActivityNode;
