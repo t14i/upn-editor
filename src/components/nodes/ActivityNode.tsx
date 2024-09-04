@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronDown, Link, Thermometer, Plus, X } from "lucide-react";
+import { Handle, Position } from 'reactflow';
 
 interface AdditionalInfo {
   text: string;
@@ -21,6 +22,14 @@ const tagColors = {
   A: 'bg-green-200 text-green-800',
   C: 'bg-yellow-200 text-yellow-800',
   I: 'bg-blue-200 text-blue-800',
+};
+
+const handleStyle = {
+  width: '18px',  // 12px * 1.5
+  height: '18px', // 12px * 1.5
+  background: '#ddd',
+  border: '1px solid #ddd', // 枠線の色を中と同じに
+  borderRadius: '50%',
 };
 
 const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
@@ -154,9 +163,129 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
 
   return (
     <div 
-      className="relative w-[300px] bg-white rounded-lg shadow-lg border-4 border-blue-500 overflow-hidden text-center"
+      className="relative w-[300px] bg-white rounded-lg shadow-lg border-4 border-blue-500 overflow-visible text-center"
       onClick={handleOutsideClick}
     >
+      {/* 上部のハンドル */}
+      <Handle 
+        type="source" 
+        position={Position.Top} 
+        id="t1" 
+        style={{...handleStyle, top: '-23px', left: 'calc(33% - 9px)'}} 
+        data-handleid="t1"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        id="t1" 
+        style={{...handleStyle, top: '-23px', left: 'calc(33% - 9px)'}} 
+        data-handleid="t1"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Top} 
+        id="t2" 
+        style={{...handleStyle, top: '-23px', left: 'calc(67% - 9px)'}} 
+        data-handleid="t2"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        id="t2" 
+        style={{...handleStyle, top: '-23px', left: 'calc(67% - 9px)'}} 
+        data-handleid="t2"
+      />
+
+      {/* 右側のハンドル */}
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        id="r1" 
+        style={{...handleStyle, right: '-23px', top: 'calc(33% - 9px)'}} 
+        data-handleid="r1"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Right} 
+        id="r1" 
+        style={{...handleStyle, right: '-23px', top: 'calc(33% - 9px)'}} 
+        data-handleid="r1"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Right} 
+        id="r2" 
+        style={{...handleStyle, right: '-23px', top: 'calc(67% - 9px)'}} 
+        data-handleid="r2"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Right} 
+        id="r2" 
+        style={{...handleStyle, right: '-23px', top: 'calc(67% - 9px)'}} 
+        data-handleid="r2"
+      />
+
+      {/* 下部のハンドル */}
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        id="b1" 
+        style={{...handleStyle, bottom: '-23px', left: 'calc(33% - 9px)'}} 
+        data-handleid="b1"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Bottom} 
+        id="b1" 
+        style={{...handleStyle, bottom: '-23px', left: 'calc(33% - 9px)'}} 
+        data-handleid="b1"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        id="b2" 
+        style={{...handleStyle, bottom: '-23px', left: 'calc(67% - 9px)'}} 
+        data-handleid="b2"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Bottom} 
+        id="b2" 
+        style={{...handleStyle, bottom: '-23px', left: 'calc(67% - 9px)'}} 
+        data-handleid="b2"
+      />
+
+      {/* 左側のハンドル */}
+      <Handle 
+        type="source" 
+        position={Position.Left} 
+        id="l1" 
+        style={{...handleStyle, left: '-23px', top: 'calc(33% - 9px)'}} 
+        data-handleid="l1"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        id="l1" 
+        style={{...handleStyle, left: '-23px', top: 'calc(33% - 9px)'}} 
+        data-handleid="l1"
+      />
+      <Handle 
+        type="source" 
+        position={Position.Left} 
+        id="l2" 
+        style={{...handleStyle, left: '-23px', top: 'calc(67% - 9px)'}} 
+        data-handleid="l2"
+      />
+      <Handle 
+        type="target" 
+        position={Position.Left} 
+        id="l2" 
+        style={{...handleStyle, left: '-23px', top: 'calc(67% - 9px)'}} 
+        data-handleid="l2"
+      />
+
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" className="absolute top-2 right-2 h-8 w-8 rounded-full p-0 z-10" aria-label="Open menu">
