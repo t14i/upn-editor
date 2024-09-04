@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ChevronDown, Link, Thermometer, Plus, X } from "lucide-react";
 import { Handle, Position } from 'reactflow';
 
-interface AdditionalInfo {
+export interface AdditionalInfo {
   text: string;
   tags: string[];
 }
@@ -17,7 +17,11 @@ interface ActivityNodeProps {
   };
 }
 
-const tagColors = {
+// タグの型を定義
+type TagType = 'R' | 'A' | 'C' | 'I';
+
+// tagColorsオブジェクトの型を明示的に定義
+const tagColors: Record<TagType, string> = {
   R: 'bg-pink-200 text-pink-800',
   A: 'bg-green-200 text-green-800',
   C: 'bg-yellow-200 text-yellow-800',
@@ -117,7 +121,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
     }
   };
 
-  const toggleTag = (index: number, tag: string) => {
+  const toggleTag = (index: number, tag: TagType) => {
     const newAdditionalInfo = [...additionalInfo];
     const currentTags = newAdditionalInfo[index].tags;
     if (currentTags.includes(tag)) {
@@ -322,7 +326,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
             className="text-xl font-bold cursor-pointer h-full flex items-center justify-center" 
             onClick={handleActivityTextClick}
           >
-            {text || 'アクティビティを入力'}
+            {text || 'アクティビ���ィを入力'}
           </h2>
         )}
       </div>
@@ -337,15 +341,17 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
                     {['R', 'A', 'C', 'I'].map((tag) => (
                       <button
                         key={tag}
-                        onClick={() => toggleTag(index, tag)}
-                        className={`w-6 h-6 rounded-full ${info.tags.includes(tag) ? tagColors[tag] : 'bg-gray-200'} text-sm font-bold`}
+                        onClick={() => toggleTag(index, tag as TagType)}
+                        className={`w-6 h-6 rounded-full ${info.tags.includes(tag) ? tagColors[tag as TagType] : 'bg-gray-200'} text-sm font-bold`}
                       >
                         {tag}
                       </button>
                     ))}
                   </div>
                   <input
-                    ref={el => additionalInfoRefs.current[index] = el}
+                    ref={(el) => {
+                      additionalInfoRefs.current[index] = el;
+                    }}
                     type="text"
                     value={info.text}
                     onChange={(e) => handleAdditionalInfoChange(index, e.target.value)}
@@ -374,7 +380,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
                   {info.tags.map((tag) => (
                     <span
                       key={tag}
-                      className={`w-6 h-6 rounded-full ${tagColors[tag]} text-sm font-bold flex items-center justify-center`}
+                      className={`w-6 h-6 rounded-full ${tagColors[tag as TagType]} text-sm font-bold flex items-center justify-center`}
                     >
                       {tag}
                     </span>

@@ -5,6 +5,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   addEdge,
+  updateEdge,  // updateEdgeをここに追加
   Connection,
   Edge,
   NodeTypes,
@@ -12,14 +13,17 @@ import ReactFlow, {
   MarkerType,
   OnConnectStartParams,
   ConnectingHandle,
+  HandleType,
   useReactFlow,
   ReactFlowInstance,
   ReactFlowProvider,
+  EdgeProps, // EdgePropsをここに追加
+  ConnectionMode,  // ConnectionModeをインポートに追加
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
-import ActivityNode from './nodes/ActivityNode';
-import CustomEdge from './edges/CustomEdge';
+import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode'; // AdditionalInfoをインポート
+import CustomEdge, { CustomEdgeProps } from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
 import sampleObject from '../sample-object.json'; // sample-object.jsonをインポート
 
@@ -28,7 +32,7 @@ const nodeTypes: NodeTypes = {
 };
 
 const edgeTypes: EdgeTypes = {
-  custom: CustomEdge,
+  custom: CustomEdge as React.ComponentType<EdgeProps>,
 };
 
 const UPNEditorContent: React.FC = () => {
@@ -43,7 +47,13 @@ const UPNEditorContent: React.FC = () => {
   const [flowObject, setFlowObject] = useState('');
 
   const onConnectStart = useCallback((_: React.MouseEvent, params: OnConnectStartParams) => {
-    setConnectingHandle(params);
+    if (params.nodeId) {
+      setConnectingHandle({
+        nodeId: params.nodeId,
+        handleId: params.handleId || '',
+        type: params.handleType || 'source', // nullの場合は'source'をデフォルト値として使用
+      });
+    }
   }, []);
 
   const onConnectEnd = useCallback(
@@ -178,7 +188,8 @@ const UPNEditorContent: React.FC = () => {
   const onRestoreSample = useCallback(() => {
     const { nodes: sampleNodes, edges: sampleEdges, viewport } = sampleObject;
     setNodes(sampleNodes || []);
-    setEdges(sampleEdges || []);
+    // sampleEdgesの型をEdge<any>[]に変換
+    setEdges((sampleEdges as Edge<any>[]) || []);
     if (viewport) {
       setViewport(viewport);
     }
@@ -198,13 +209,13 @@ const UPNEditorContent: React.FC = () => {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnectStart={onConnectStart}
-          onConnectEnd={onConnectEnd}
+          onConnectStart={(event, params) => onConnectStart(event as React.MouseEvent, params)}
+          onConnectEnd={(event) => onConnectEnd(event as MouseEvent)}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           onContextMenu={onContextMenu}
           onClick={closeContextMenu}
-          connectionMode="loose"
+          connectionMode={ConnectionMode.Loose}  // ここを修正
           onInit={setRfInstance}
         >
           <Controls />
@@ -225,7 +236,7 @@ const UPNEditorContent: React.FC = () => {
         )}
       </div>
       <div 
-        className="absolute bottom-4 right-4 w-[600px] h-[900px] flex flex-col"
+        className="absolute bottom-4 right-4 w-[400px] h-[600px] flex flex-col"
         style={{ zIndex: 1000 }}
       >
         <div className="mb-2">

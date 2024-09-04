@@ -6,7 +6,7 @@ interface CustomEdgeData {
   onLabelChange: (edgeId: string, newLabel: string) => void;
 }
 
-interface CustomEdgeProps extends EdgeProps {
+export interface CustomEdgeProps extends EdgeProps {
   data: CustomEdgeData;
 }
 
