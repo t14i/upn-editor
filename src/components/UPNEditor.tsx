@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactFlow, {
   Controls,
   Background,
@@ -12,11 +12,15 @@ import ReactFlow, {
   MarkerType,
   OnConnectStartParams,
   ConnectingHandle,
+  useReactFlow,
+  ReactFlowInstance,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
 import ActivityNode from './nodes/ActivityNode';
 import CustomEdge from './edges/CustomEdge';
+import { Textarea } from '@/components/ui/textarea';
 
 const nodeTypes: NodeTypes = {
   activity: ActivityNode,
@@ -26,12 +30,16 @@ const edgeTypes: EdgeTypes = {
   custom: CustomEdge,
 };
 
-const UPNEditor: React.FC = () => {
+const UPNEditorContent: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [connectingHandle, setConnectingHandle] = useState<ConnectingHandle | null>(null);
+  const [notes, setNotes] = useState('');
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+  const { setViewport } = useReactFlow();
+  const [flowObject, setFlowObject] = useState('');
 
   const onConnectStart = useCallback((_: React.MouseEvent, params: OnConnectStartParams) => {
     setConnectingHandle(params);
@@ -149,8 +157,31 @@ const UPNEditor: React.FC = () => {
     );
   }, [setEdges]);
 
+  const onSave = useCallback(() => {
+    if (rfInstance) {
+      const flow = rfInstance.toObject();
+      setFlowObject(JSON.stringify(flow, null, 2));
+    }
+  }, [rfInstance]);
+
+  const onRestore = useCallback(() => {
+    const flow = JSON.parse(flowObject);
+    if (flow) {
+      const { x = 0, y = 0, zoom = 1 } = flow.viewport;
+      setNodes(flow.nodes || []);
+      setEdges(flow.edges || []);
+      setViewport({ x, y, zoom });
+    }
+  }, [flowObject, setNodes, setEdges, setViewport]);
+
+  useEffect(() => {
+    if (rfInstance) {
+      onSave();
+    }
+  }, [rfInstance, nodes, edges, onSave]);
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col relative">
       <div className="flex-grow" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
@@ -164,6 +195,7 @@ const UPNEditor: React.FC = () => {
           onContextMenu={onContextMenu}
           onClick={closeContextMenu}
           connectionMode="loose"
+          onInit={setRfInstance}
         >
           <Controls />
           <Background />
@@ -182,8 +214,29 @@ const UPNEditor: React.FC = () => {
           </div>
         )}
       </div>
+      <div 
+        className="absolute bottom-4 right-4 w-[600px] h-[900px] flex flex-col"
+        style={{ zIndex: 1000 }}
+      >
+        <div className="mb-2">
+          <Button onClick={onSave} className="mr-2">Save</Button>
+          <Button onClick={onRestore}>Restore</Button>
+        </div>
+        <Textarea
+          value={flowObject}
+          onChange={(e) => setFlowObject(e.target.value)}
+          className="w-full flex-grow resize-none"
+          placeholder="Flow Objectデータ"
+        />
+      </div>
     </div>
   );
 };
+
+const UPNEditor: React.FC = () => (
+  <ReactFlowProvider>
+    <UPNEditorContent />
+  </ReactFlowProvider>
+);
 
 export default UPNEditor;
