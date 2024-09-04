@@ -1,0 +1,562 @@
+{
+    "nodes": [
+      {
+        "id": "1",
+        "type": "activity",
+        "position": {
+          "x": 60.57936629847194,
+          "y": 198.4819151281556
+        },
+        "data": {
+          "label": "Request support",
+          "verbPhrase": "Request support",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Customer",
+              "tags": [
+                "R"
+              ]
+            },
+            {
+              "text": "Website form",
+              "tags": []
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 337,
+        "selected": true,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 60.57936629847194,
+          "y": 198.4819151281556
+        }
+      },
+      {
+        "id": "2",
+        "type": "activity",
+        "position": {
+          "x": 612.5522860674424,
+          "y": 217.25262328497595
+        },
+        "data": {
+          "label": "Resolve sales support request",
+          "verbPhrase": "Resolve sales support request",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Technical support",
+              "tags": [
+                "R",
+                "A"
+              ]
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 288,
+        "selected": false,
+        "positionAbsolute": {
+          "x": 612.5522860674424,
+          "y": 217.25262328497595
+        },
+        "dragging": false
+      },
+      {
+        "id": "3",
+        "type": "activity",
+        "position": {
+          "x": 617.7598384030189,
+          "y": 694.781577910622
+        },
+        "data": {
+          "label": "Resolve technical support request",
+          "verbPhrase": "Resolve technical support request",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Technical support",
+              "tags": [
+                "R",
+                "A"
+              ]
+            },
+            {
+              "text": "Salesforce.com",
+              "tags": []
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 337,
+        "selected": false,
+        "positionAbsolute": {
+          "x": 617.7598384030189,
+          "y": 694.781577910622
+        },
+        "dragging": false
+      },
+      {
+        "id": "4",
+        "type": "activity",
+        "position": {
+          "x": 1141.9197056469832,
+          "y": 1021.2412703656508
+        },
+        "data": {
+          "label": "Test issue",
+          "verbPhrase": "Test issue",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Test",
+              "tags": [
+                "R",
+                "A"
+              ]
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 288,
+        "selected": false,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 1141.9197056469832,
+          "y": 1021.2412703656508
+        }
+      },
+      {
+        "id": "5",
+        "type": "activity",
+        "position": {
+          "x": 147.7159312581739,
+          "y": 993.4978659173762
+        },
+        "data": {
+          "label": "Request more details",
+          "verbPhrase": "Request more details",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Customer",
+              "tags": [
+                "C"
+              ]
+            },
+            {
+              "text": "Technical support",
+              "tags": [
+                "R",
+                "A"
+              ]
+            },
+            {
+              "text": "Salesforce.com",
+              "tags": []
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 386,
+        "selected": false,
+        "positionAbsolute": {
+          "x": 147.7159312581739,
+          "y": 993.4978659173762
+        },
+        "dragging": false
+      },
+      {
+        "id": "6",
+        "type": "activity",
+        "position": {
+          "x": 1673.70673149159,
+          "y": 1021.7248590585341
+        },
+        "data": {
+          "label": "Analyze issue",
+          "verbPhrase": "Analyze issue",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Developer",
+              "tags": [
+                "R",
+                "A"
+              ]
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 288,
+        "selected": false,
+        "positionAbsolute": {
+          "x": 1673.70673149159,
+          "y": 1021.7248590585341
+        },
+        "dragging": false
+      },
+      {
+        "id": "7",
+        "type": "activity",
+        "position": {
+          "x": 2210.3383662723904,
+          "y": 1023.1312037069645
+        },
+        "data": {
+          "label": "Fix issue",
+          "verbPhrase": "Fix issue",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Developer",
+              "tags": [
+                "A"
+              ]
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 288,
+        "selected": false,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 2210.3383662723904,
+          "y": 1023.1312037069645
+        }
+      },
+      {
+        "id": "8",
+        "type": "activity",
+        "position": {
+          "x": 2207.2034928213607,
+          "y": 456.2805349808732
+        },
+        "data": {
+          "label": "Resolve solution for customer",
+          "verbPhrase": "Resolve solution for customer",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Technical support",
+              "tags": [
+                "A"
+              ]
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 288,
+        "selected": false,
+        "dragging": false,
+        "positionAbsolute": {
+          "x": 2207.2034928213607,
+          "y": 456.2805349808732
+        }
+      },
+      {
+        "id": "9",
+        "type": "activity",
+        "position": {
+          "x": 2689.419459015679,
+          "y": 186.153559224248
+        },
+        "data": {
+          "label": "Confirm with customer",
+          "verbPhrase": "Confirm with customer",
+          "resources": [],
+          "additionalInfo": [
+            {
+              "text": "Technical support",
+              "tags": [
+                "R"
+              ]
+            },
+            {
+              "text": "Sales",
+              "tags": [
+                "A"
+              ]
+            },
+            {
+              "text": "Customer",
+              "tags": [
+                "I"
+              ]
+            },
+            {
+              "text": "Salesforce.com",
+              "tags": []
+            }
+          ],
+          "isNew": false
+        },
+        "width": 300,
+        "height": 395,
+        "selected": false,
+        "positionAbsolute": {
+          "x": 2689.419459015679,
+          "y": 186.153559224248
+        },
+        "dragging": false
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1-2-r1-l1",
+        "source": "1",
+        "target": "2",
+        "sourceHandle": "r1",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Sales issues"
+        },
+        "selected": false
+      },
+      {
+        "id": "e1-3-r2-l1",
+        "source": "1",
+        "target": "3",
+        "sourceHandle": "r2",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Non-sales issue"
+        },
+        "selected": false
+      },
+      {
+        "id": "e3-4-r2-t1",
+        "source": "3",
+        "target": "4",
+        "sourceHandle": "r2",
+        "targetHandle": "t1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "New Issue"
+        },
+        "selected": false
+      },
+      {
+        "id": "e4-5-l1-r1",
+        "source": "4",
+        "target": "5",
+        "sourceHandle": "l1",
+        "targetHandle": "r1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Cannot reproduce issue"
+        },
+        "selected": false
+      },
+      {
+        "id": "e4-6-r1-l1",
+        "source": "4",
+        "target": "6",
+        "sourceHandle": "r1",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Reproduce issue"
+        },
+        "selected": false
+      },
+      {
+        "id": "e6-7-r1-l1",
+        "source": "6",
+        "target": "7",
+        "sourceHandle": "r1",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Potential solution"
+        },
+        "selected": false
+      },
+      {
+        "id": "e7-6-t1-t2",
+        "source": "7",
+        "target": "6",
+        "sourceHandle": "t1",
+        "targetHandle": "t2",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Not resolved"
+        },
+        "selected": false
+      },
+      {
+        "id": "e7-8-t2-b2",
+        "source": "7",
+        "target": "8",
+        "sourceHandle": "t2",
+        "targetHandle": "b2",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Resolved"
+        },
+        "selected": false
+      },
+      {
+        "id": "e8-9-t2-l1",
+        "source": "8",
+        "target": "9",
+        "sourceHandle": "t2",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Resolved"
+        },
+        "selected": false
+      },
+      {
+        "id": "e2-9-r1-l1",
+        "source": "2",
+        "target": "9",
+        "sourceHandle": "r1",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Resolved"
+        },
+        "selected": false
+      },
+      {
+        "id": "e3-9-r1-l1",
+        "source": "3",
+        "target": "9",
+        "sourceHandle": "r1",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Resolved"
+        },
+        "selected": false
+      }
+    ],
+    "viewport": {
+      "x": 21.810666612471096,
+      "y": 193.97518170853584,
+      "zoom": 0.6127742954814795
+    }
+  }

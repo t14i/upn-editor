@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import ActivityNode from './nodes/ActivityNode';
 import CustomEdge from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
+import sampleObject from '../sample-object.json'; // sample-object.jsonをインポート
 
 const nodeTypes: NodeTypes = {
   activity: ActivityNode,
@@ -174,6 +175,15 @@ const UPNEditorContent: React.FC = () => {
     }
   }, [flowObject, setNodes, setEdges, setViewport]);
 
+  const onRestoreSample = useCallback(() => {
+    const { nodes: sampleNodes, edges: sampleEdges, viewport } = sampleObject;
+    setNodes(sampleNodes || []);
+    setEdges(sampleEdges || []);
+    if (viewport) {
+      setViewport(viewport);
+    }
+  }, [setNodes, setEdges, setViewport]);
+
   useEffect(() => {
     if (rfInstance) {
       onSave();
@@ -220,7 +230,8 @@ const UPNEditorContent: React.FC = () => {
       >
         <div className="mb-2">
           <Button onClick={onSave} className="mr-2">Save</Button>
-          <Button onClick={onRestore}>Restore</Button>
+          <Button onClick={onRestore} className="mr-2">Restore</Button>
+          <Button onClick={onRestoreSample}>Restore Sample</Button>
         </div>
         <Textarea
           value={flowObject}
