@@ -326,7 +326,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
             className="text-xl font-bold cursor-pointer h-full flex items-center justify-center" 
             onClick={handleActivityTextClick}
           >
-            {text || 'アクティビ���ィを入力'}
+            {text || 'アクティビティを入力'}
           </h2>
         )}
       </div>

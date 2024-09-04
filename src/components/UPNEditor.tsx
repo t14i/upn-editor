@@ -5,7 +5,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   addEdge,
-  updateEdge,  // updateEdgeをここに追加
+  updateEdge,
   Connection,
   Edge,
   NodeTypes,
@@ -13,19 +13,24 @@ import ReactFlow, {
   MarkerType,
   OnConnectStartParams,
   ConnectingHandle,
-  HandleType,
   useReactFlow,
   ReactFlowInstance,
   ReactFlowProvider,
-  EdgeProps, // EdgePropsをここに追加
-  ConnectionMode,  // ConnectionModeをインポートに追加
+  EdgeProps,
+  ConnectionMode,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
-import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode'; // AdditionalInfoをインポート
-import CustomEdge, { CustomEdgeProps } from './edges/CustomEdge';
+import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode';
+import CustomEdge from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
-import sampleObject from '../sample-object.json'; // sample-object.jsonをインポート
+import sampleObject from '../sample-object.json';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const nodeTypes: NodeTypes = {
   activity: ActivityNode,
@@ -215,24 +220,29 @@ const UPNEditorContent: React.FC = () => {
           edgeTypes={edgeTypes}
           onContextMenu={onContextMenu}
           onClick={closeContextMenu}
-          connectionMode={ConnectionMode.Loose}  // ここを修正
+          connectionMode={ConnectionMode.Loose}
           onInit={setRfInstance}
         >
           <Controls />
           <Background />
         </ReactFlow>
         {contextMenu.visible && (
-          <div
-            style={{
-              position: 'absolute',
-              left: `${contextMenu.x}px`,
-              top: `${contextMenu.y}px`,
-              zIndex: 1000,
-            }}
-            className="bg-white border rounded shadow-lg p-2"
-          >
-            <Button onClick={addActivityNode}>New activity</Button>
-          </div>
+          <DropdownMenu open={true}>
+            <DropdownMenuTrigger asChild>
+              <div style={{
+                position: 'absolute',
+                left: `${contextMenu.x}px`,
+                top: `${contextMenu.y}px`,
+                visibility: 'hidden'
+              }} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuItem onClick={addActivityNode}>
+                新しいアクティビティ
+              </DropdownMenuItem>
+              {/* 必要に応じて他のメニュー項目を追加 */}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
       <div 
