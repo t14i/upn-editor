@@ -27,7 +27,7 @@
         },
         "width": 300,
         "height": 337,
-        "selected": true,
+        "selected": false,
         "dragging": false,
         "positionAbsolute": {
           "x": 60.57936629847194,
@@ -308,6 +308,52 @@
           "y": 186.153559224248
         },
         "dragging": false
+      },
+      {
+        "id": "10",
+        "type": "start",
+        "position": {
+          "x": -280.0673711925288,
+          "y": 280.8156703796062
+        },
+        "data": {
+          "label": "Start",
+          "verbPhrase": "",
+          "resources": [],
+          "additionalInfo": [],
+          "isNew": true
+        },
+        "width": 100,
+        "height": 50,
+        "selected": false,
+        "positionAbsolute": {
+          "x": -280.0673711925288,
+          "y": 280.8156703796062
+        },
+        "dragging": false
+      },
+      {
+        "id": "11",
+        "type": "end",
+        "position": {
+          "x": 3210.5126331280408,
+          "y": 282.97475895964135
+        },
+        "data": {
+          "label": "End",
+          "verbPhrase": "",
+          "resources": [],
+          "additionalInfo": [],
+          "isNew": true
+        },
+        "width": 100,
+        "height": 50,
+        "selected": false,
+        "positionAbsolute": {
+          "x": 3210.5126331280408,
+          "y": 282.97475895964135
+        },
+        "dragging": false
       }
     ],
     "edges": [
@@ -552,11 +598,55 @@
           "label": "Resolved"
         },
         "selected": false
+      },
+      {
+        "id": "e10-1-start-handle-l1",
+        "source": "10",
+        "target": "1",
+        "sourceHandle": "start-handle",
+        "targetHandle": "l1",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "Start flow"
+        },
+        "selected": false
+      },
+      {
+        "id": "e9-11-r1-end-handle",
+        "source": "9",
+        "target": "11",
+        "sourceHandle": "r1",
+        "targetHandle": "end-handle",
+        "type": "custom",
+        "animated": true,
+        "style": {
+          "stroke": "#555"
+        },
+        "markerEnd": {
+          "type": "arrowclosed",
+          "width": 20,
+          "height": 20,
+          "color": "#555"
+        },
+        "data": {
+          "label": "End flow"
+        },
+        "selected": false
       }
     ],
     "viewport": {
-      "x": 21.810666612471096,
-      "y": 193.97518170853584,
-      "zoom": 0.6127742954814795
+      "x": 229.0739768320493,
+      "y": 241.59555635235404,
+      "zoom": 0.5286268769214681
     }
   }

@@ -31,9 +31,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import StartNode from './nodes/StartNode';
+import EndNode from './nodes/EndNode';
 
 const nodeTypes: NodeTypes = {
   activity: ActivityNode,
+  start: StartNode,
+  end: EndNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -50,6 +54,16 @@ const UPNEditorContent: React.FC = () => {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport } = useReactFlow();
   const [flowObject, setFlowObject] = useState('');
+
+  const onEdgeLabelChange = useCallback((edgeId: string, newLabel: string) => {
+    setEdges((eds) =>
+      eds.map((edge) =>
+        edge.id === edgeId
+          ? { ...edge, data: { ...edge.data, label: newLabel } }
+          : edge
+      )
+    );
+  }, [setEdges]);
 
   const onConnectStart = useCallback((_: React.MouseEvent, params: OnConnectStartParams) => {
     if (params.nodeId) {
@@ -73,6 +87,8 @@ const UPNEditorContent: React.FC = () => {
         const targetId = targetNode.getAttribute('data-id');
         const targetHandleId = targetHandle.getAttribute('data-handleid');
 
+        console.log('Connection attempt:', { sourceId, sourceHandle, targetId, targetHandleId });
+
         if (sourceId && targetId && sourceHandle && targetHandleId) {
           const newEdge = {
             id: `e${sourceId}-${targetId}-${sourceHandle}-${targetHandleId}`,
@@ -95,11 +111,16 @@ const UPNEditorContent: React.FC = () => {
             },
           };
           setEdges((eds) => addEdge(newEdge, eds));
+          console.log('Edge added successfully:', newEdge);
+        } else {
+          console.error('Failed to add edge. Missing required information:', { sourceId, sourceHandle, targetId, targetHandleId });
         }
+      } else {
+        console.log('Connection attempt failed. Missing required elements:', { connectingHandle, targetHandle, targetNode });
       }
       setConnectingHandle(null);
     },
-    [connectingHandle, setEdges]
+    [connectingHandle, setEdges, onEdgeLabelChange]
   );
 
   const onEdgeUpdate = useCallback(
@@ -128,13 +149,13 @@ const UPNEditorContent: React.FC = () => {
     setContextMenu({ visible: false, x: 0, y: 0 });
   };
 
-  const addActivityNode = () => {
+  const addNode = (type: 'activity' | 'start' | 'end') => {
     const newNode = {
       id: (nodes.length + 1).toString(),
-      type: 'activity',
+      type: type,
       position: { x: contextMenu.x, y: contextMenu.y },
       data: {
-        label: '',
+        label: type === 'start' ? 'Start' : type === 'end' ? 'End' : '',
         verbPhrase: '',
         resources: [],
         additionalInfo: [],
@@ -162,16 +183,6 @@ const UPNEditorContent: React.FC = () => {
     setNodes((nds) => nds.concat(newNode));
     closeContextMenu();
   };
-
-  const onEdgeLabelChange = useCallback((edgeId: string, newLabel: string) => {
-    setEdges((eds) =>
-      eds.map((edge) =>
-        edge.id === edgeId
-          ? { ...edge, data: { ...edge.data, label: newLabel } }
-          : edge
-      )
-    );
-  }, [setEdges]);
 
   const onSave = useCallback(() => {
     if (rfInstance) {
@@ -237,10 +248,15 @@ const UPNEditorContent: React.FC = () => {
               }} />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuItem onClick={addActivityNode}>
-                新しいアクティビティ
+              <DropdownMenuItem onClick={() => addNode('activity')}>
+                アクティビティを追加
               </DropdownMenuItem>
-              {/* 必要に応じて他のメニュー項目を追加 */}
+              <DropdownMenuItem onClick={() => addNode('start')}>
+                スタートノードを追加
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => addNode('end')}>
+                エンドノードを追加
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
