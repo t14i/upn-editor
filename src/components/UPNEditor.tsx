@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import StartNode from './nodes/StartNode';
 import EndNode from './nodes/EndNode';
+import { supabase } from '@/lib/supabaseClient';
 
 const nodeTypes: NodeTypes = {
   activity: ActivityNode,
@@ -232,6 +233,21 @@ const UPNEditorContent: React.FC = () => {
     }
   }, [rfInstance, nodes, edges, onSave]);
 
+  const saveToSupabase = async () => {
+    if (rfInstance) {
+      const flow = rfInstance.toObject();
+      const { data, error } = await supabase
+        .from('flows')
+        .upsert({ id: 'your-flow-id', flow_data: flow });
+
+      if (error) {
+        console.error('Error saving to Supabase:', error);
+      } else {
+        console.log('Saved to Supabase:', data);
+      }
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col relative">
       <div className="flex-grow" ref={reactFlowWrapper}>
@@ -281,9 +297,9 @@ const UPNEditorContent: React.FC = () => {
         style={{ zIndex: 1000 }}
       >
         <div className="mb-2">
-          <Button onClick={onSave} className="mr-2">Save</Button>
           <Button onClick={onRestore} className="mr-2">Restore</Button>
-          <Button onClick={onRestoreSample}>Restore Sample</Button>
+          <Button onClick={onRestoreSample} className="mr-2">Sample</Button>
+          <Button onClick={saveToSupabase}>Save to Supabase</Button>
         </div>
         <Textarea
           value={flowObject}
