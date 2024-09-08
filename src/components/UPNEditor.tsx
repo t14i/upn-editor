@@ -145,9 +145,24 @@ const UPNEditorContent: React.FC = () => {
     [setContextMenu]
   );
 
-  const closeContextMenu = () => {
+  const closeContextMenu = useCallback(() => {
     setContextMenu({ visible: false, x: 0, y: 0 });
-  };
+  }, []);
+
+  // ReactFlowの外側のクリックを処理するハンドラー
+  const handleOutsideClick = useCallback((event: MouseEvent) => {
+    if (reactFlowWrapper.current && !reactFlowWrapper.current.contains(event.target as Node)) {
+      closeContextMenu();
+    }
+  }, [closeContextMenu]);
+
+  // コンポーネントのマウント時にイベントリスナーを追加し、アンマウント時に削除
+  useEffect(() => {
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [handleOutsideClick]);
 
   const addNode = (type: 'activity' | 'start' | 'end') => {
     const newNode = {
@@ -238,7 +253,7 @@ const UPNEditorContent: React.FC = () => {
           <Background />
         </ReactFlow>
         {contextMenu.visible && (
-          <DropdownMenu open={true}>
+          <DropdownMenu open={true} onOpenChange={(open) => !open && closeContextMenu()}>
             <DropdownMenuTrigger asChild>
               <div style={{
                 position: 'absolute',
