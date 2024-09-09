@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ReactFlow, {
   Controls,
   Background,
@@ -21,6 +22,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode';
 import CustomEdge from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,7 +46,11 @@ const edgeTypes: EdgeTypes = {
   custom: CustomEdge as React.ComponentType<EdgeProps>,
 };
 
-const UPNEditorContent: React.FC = () => {
+interface UPNEditorProps {
+  flowId: string | null;
+}
+
+const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
@@ -55,7 +61,28 @@ const UPNEditorContent: React.FC = () => {
   const { setViewport } = useReactFlow();
   const [flowObject, setFlowObject] = useState('');
   const [flowName, setFlowName] = useState('Untitled Flow');
-  const [flowId, setFlowId] = useState<string | null>(null);
+  const [flowId, setFlowId] = useState<string | null>(initialFlowId);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (flowId && flowId !== 'new') {
+      const fetchFlow = async () => {
+        const response = await fetch(`/api/getFlow?id=${flowId}`);
+        const data = await response.json();
+        if (data.data) {
+          setFlowName(data.data.name);
+          setFlowObject(JSON.stringify(data.data.flow_data));
+          setNodes(data.data.flow_data.nodes || []);
+          setEdges(data.data.flow_data.edges || []);
+          if (data.data.flow_data.viewport) {
+            setViewport(data.data.flow_data.viewport);
+          }
+        }
+      };
+      fetchFlow();
+    }
+  }, [flowId, setViewport]);
 
   const onEdgeLabelChange = useCallback((edgeId: string, newLabel: string) => {
     setEdges((eds) =>
@@ -72,7 +99,7 @@ const UPNEditorContent: React.FC = () => {
       setConnectingHandle({
         nodeId: params.nodeId,
         handleId: params.handleId || '',
-        type: params.handleType || 'source', // nullの場合は'source'をデフォルト値として使用
+        type: params.handleType || 'source',
       });
     }
   }, []);
@@ -151,14 +178,12 @@ const UPNEditorContent: React.FC = () => {
     setContextMenu({ visible: false, x: 0, y: 0 });
   }, []);
 
-  // ReactFlowの外側のクリックを処理するハンドラー
   const handleOutsideClick = useCallback((event: MouseEvent) => {
     if (reactFlowWrapper.current && !reactFlowWrapper.current.contains(event.target as Node)) {
       closeContextMenu();
     }
   }, [closeContextMenu]);
 
-  // コンポーネントのマウント時にイベントリスナーを追加し、アンマウント時に削除
   useEffect(() => {
     document.addEventListener('mousedown', handleOutsideClick);
     return () => {
@@ -221,7 +246,6 @@ const UPNEditorContent: React.FC = () => {
   const onRestoreSample = useCallback(() => {
     const { nodes: sampleNodes, edges: sampleEdges, viewport } = sampleObject;
     setNodes(sampleNodes || []);
-    // sampleEdgesの型をEdge<any>[]に変換
     setEdges((sampleEdges as Edge<any>[]) || []);
     if (viewport) {
       setViewport(viewport);
@@ -245,7 +269,6 @@ const UPNEditorContent: React.FC = () => {
       try {
         let response;
         if (flowId) {
-          // Update existing flow
           response = await fetch('/api/updateFlow', {
             method: 'POST',
             headers: {
@@ -254,7 +277,6 @@ const UPNEditorContent: React.FC = () => {
             body: JSON.stringify({ ...payload, id: flowId }),
           });
         } else {
-          // Create new flow
           response = await fetch('/api/createFlow', {
             method: 'POST',
             headers: {
@@ -270,21 +292,30 @@ const UPNEditorContent: React.FC = () => {
           if (result.data && result.data[0]) {
             setFlowId(result.data[0].id);
           }
-          // 成功時の処理を追加できます。例えば、ユーザーに通知するなど
         } else {
           const errorText = await response.text();
           console.error('Error saving to Supabase:', errorText);
-          // エラー時の処理を追加できます。例えば、エラーメッセージを表示するなど
         }
       } catch (error) {
         console.error('Network error:', error);
-        // ネットワークエラー時の処理を追加できます
       }
     }
+    router.push('/');
   };
 
   return (
     <div className="h-screen flex flex-col relative">
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push('/')}
+          className="flex items-center space-x-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to List</span>
+        </Button>
+      </div>
       <div className="flex-grow" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
@@ -356,9 +387,9 @@ const UPNEditorContent: React.FC = () => {
   );
 };
 
-const UPNEditor: React.FC = () => (
+const UPNEditor: React.FC<UPNEditorProps> = (props) => (
   <ReactFlowProvider>
-    <UPNEditorContent />
+    <UPNEditorContent {...props} />
   </ReactFlowProvider>
 );
 

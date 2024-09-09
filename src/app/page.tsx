@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
-import UPNEditor from '@/components/UPNEditor';
+import FlowList from '@/components/FlowList';
 
 export default function Home() {
-  return <UPNEditor />;
+  return <FlowList />;
 }
