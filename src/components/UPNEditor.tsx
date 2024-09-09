@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import StartNode from './nodes/StartNode';
 import EndNode from './nodes/EndNode';
-import { supabase } from '@/lib/supabaseClient';
 
 const nodeTypes: NodeTypes = {
   activity: ActivityNode,
@@ -236,14 +235,30 @@ const UPNEditorContent: React.FC = () => {
   const saveToSupabase = async () => {
     if (rfInstance) {
       const flow = rfInstance.toObject();
-      const { data, error } = await supabase
-        .from('flows')
-        .upsert({ id: 'your-flow-id', flow_data: flow });
+      try {
+        const response = await fetch('/api/saveFlow', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: 'your-flow-id', // 適切なIDを指定してください。例えば、ユーザーIDやプロジェクトIDなど
+            flow_data: flow
+          }),
+        });
 
-      if (error) {
-        console.error('Error saving to Supabase:', error);
-      } else {
-        console.log('Saved to Supabase:', data);
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Saved to Supabase:', result.data);
+          // 成功時の処理を追加できます。例えば、ユーザーに通知するなど
+        } else {
+          const errorText = await response.text();
+          console.error('Error saving to Supabase:', errorText);
+          // エラー時の処理を追加できます。例えば、エラーメッセージを表示するなど
+        }
+      } catch (error) {
+        console.error('Network error:', error);
+        // ネットワークエラー時の処理を追加できます
       }
     }
   };

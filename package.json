@@ -24,6 +24,7 @@
     "react-dom": "^18",
     "reactflow": "^11.11.4",
     "shadcn-ui": "^0.2.3",
+    "supabase": "^1.191.3",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7"
   },
