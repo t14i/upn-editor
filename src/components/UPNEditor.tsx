@@ -54,6 +54,8 @@ const UPNEditorContent: React.FC = () => {
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport } = useReactFlow();
   const [flowObject, setFlowObject] = useState('');
+  const [flowName, setFlowName] = useState('Untitled Flow');
+  const [flowId, setFlowId] = useState<string | null>(null);
 
   const onEdgeLabelChange = useCallback((edgeId: string, newLabel: string) => {
     setEdges((eds) =>
@@ -235,21 +237,39 @@ const UPNEditorContent: React.FC = () => {
   const saveToSupabase = async () => {
     if (rfInstance) {
       const flow = rfInstance.toObject();
+      const payload = {
+        name: flowName,
+        flow_data: flow
+      };
+
       try {
-        const response = await fetch('/api/saveFlow', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: 'your-flow-id', // 適切なIDを指定してください。例えば、ユーザーIDやプロジェクトIDなど
-            flow_data: flow
-          }),
-        });
+        let response;
+        if (flowId) {
+          // Update existing flow
+          response = await fetch('/api/updateFlow', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ...payload, id: flowId }),
+          });
+        } else {
+          // Create new flow
+          response = await fetch('/api/createFlow', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+        }
 
         if (response.ok) {
           const result = await response.json();
           console.log('Saved to Supabase:', result.data);
+          if (result.data && result.data[0]) {
+            setFlowId(result.data[0].id);
+          }
           // 成功時の処理を追加できます。例えば、ユーザーに通知するなど
         } else {
           const errorText = await response.text();
@@ -312,9 +332,18 @@ const UPNEditorContent: React.FC = () => {
         style={{ zIndex: 1000 }}
       >
         <div className="mb-2">
+          <input
+            type="text"
+            value={flowName}
+            onChange={(e) => setFlowName(e.target.value)}
+            placeholder="Flow Name"
+            className="w-full p-2 border rounded mb-2"
+          />
+        </div>
+        <div className="flex mb-2">
           <Button onClick={onRestore} className="mr-2">Restore</Button>
           <Button onClick={onRestoreSample} className="mr-2">Sample</Button>
-          <Button onClick={saveToSupabase}>Save to Supabase</Button>
+          <Button onClick={saveToSupabase}>Save Flow</Button>
         </div>
         <Textarea
           value={flowObject}
