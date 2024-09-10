@@ -162,6 +162,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
   const onContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
+      event.stopPropagation();
       const boundingRect = reactFlowWrapper.current?.getBoundingClientRect();
       if (boundingRect) {
         setContextMenu({
@@ -178,20 +179,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     setContextMenu({ visible: false, x: 0, y: 0 });
   }, []);
 
-  const handleOutsideClick = useCallback((event: MouseEvent) => {
-    if (reactFlowWrapper.current && !reactFlowWrapper.current.contains(event.target as Node)) {
-      closeContextMenu();
-    }
-  }, [closeContextMenu]);
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, [handleOutsideClick]);
-
-  const addNode = (type: 'activity' | 'start' | 'end') => {
+  const addNode = useCallback((type: 'activity' | 'start' | 'end') => {
     const newNode = {
       id: (nodes.length + 1).toString(),
       type: type,
@@ -224,7 +212,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     };
     setNodes((nds) => nds.concat(newNode));
     closeContextMenu();
-  };
+  }, [nodes, contextMenu, closeContextMenu]);
 
   const onSave = useCallback(() => {
     if (rfInstance) {
@@ -344,14 +332,14 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
                 visibility: 'hidden'
               }} />
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuItem onClick={() => addNode('activity')}>
+            <DropdownMenuContent className="w-56" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onSelect={() => { addNode('activity'); closeContextMenu(); }}>
                 アクティビティを追加
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('start')}>
+              <DropdownMenuItem onSelect={() => { addNode('start'); closeContextMenu(); }}>
                 スタートノードを追加
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => addNode('end')}>
+              <DropdownMenuItem onSelect={() => { addNode('end'); closeContextMenu(); }}>
                 エンドノードを追加
               </DropdownMenuItem>
             </DropdownMenuContent>
