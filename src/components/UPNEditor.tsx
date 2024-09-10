@@ -143,12 +143,17 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     [setEdges]
   );
 
+  const [contextMenuType, setContextMenuType] = useState<'canvas' | 'activity'>('canvas');
+
   const onContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
       const boundingRect = reactFlowWrapper.current?.getBoundingClientRect();
       if (boundingRect) {
+        const targetElement = event.target as HTMLElement;
+        const isActivityNode = targetElement.closest('.react-flow__node-activity');
+        setContextMenuType(isActivityNode ? 'activity' : 'canvas');
         setContextMenu({
           visible: true,
           x: event.clientX - boundingRect.left,
@@ -270,6 +275,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     end: EndNode,
   }), [updateNodeData]);
 
+  const handleAddDrillDown = useCallback(() => {
+    console.log('ドリルダウンを追加');
+    closeContextMenu();
+  }, [closeContextMenu]);
+
   return (
     <div className="h-screen flex flex-col relative">
       <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
@@ -320,15 +330,23 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
               }} />
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onSelect={() => { addNode('activity'); closeContextMenu(); }}>
-                アクティビティを追加
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => { addNode('start'); closeContextMenu(); }}>
-                スタートノードを追加
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => { addNode('end'); closeContextMenu(); }}>
-                エンドノードを追加
-              </DropdownMenuItem>
+              {contextMenuType === 'canvas' ? (
+                <>
+                  <DropdownMenuItem onSelect={() => { addNode('activity'); closeContextMenu(); }}>
+                    アクティビティを追加
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => { addNode('start'); closeContextMenu(); }}>
+                    スタートノードを追加
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => { addNode('end'); closeContextMenu(); }}>
+                    エンドノードを追加
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem onSelect={handleAddDrillDown}>
+                  ドリルダウンを追加
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
