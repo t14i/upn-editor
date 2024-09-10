@@ -14,8 +14,11 @@ interface ActivityNodeProps {
   data: {
     verbPhrase: string;
     additionalInfo: AdditionalInfo[];
+    drilldownFlowId?: string;
   };
   onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => void;
+  onOpenDrilldown: (flowId: string) => void;
+  onAddDrilldown: () => void;
 }
 
 // タグの型を定義
@@ -37,7 +40,13 @@ const handleStyle = {
   borderRadius: '50%',
 };
 
-const ActivityNode: React.FC<ActivityNodeProps> = ({ id, data, onChange }) => {
+const ActivityNode: React.FC<ActivityNodeProps> = ({ 
+  id, 
+  data, 
+  onChange, 
+  onOpenDrilldown, 
+  onAddDrilldown 
+}) => {
   const [isEditing, setIsEditing] = useState(data.verbPhrase === '');
   const [text, setText] = useState(data.verbPhrase);
   const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo[]>(data.additionalInfo || []);
@@ -152,11 +161,32 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ id, data, onChange }) => {
     onChange(text, additionalInfo);
   };
 
+  const handleDrilldownClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (data.drilldownFlowId) {
+      onOpenDrilldown(data.drilldownFlowId);
+    } else {
+      onAddDrilldown();
+    }
+  };
+
   return (
     <div 
       className="relative w-[300px] bg-white rounded-lg shadow-lg border-4 border-blue-500 overflow-visible text-center"
       onClick={handleOutsideClick}
     >
+      {/* ドリルダウンリンクマーク */}
+      {data.drilldownFlowId && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-2 left-2 p-0"
+          onClick={handleDrilldownClick}
+        >
+          <Link className="h-4 w-4" />
+        </Button>
+      )}
+
       {/* 上部のハンドル */}
       <Handle 
         type="source" 
@@ -359,7 +389,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ id, data, onChange }) => {
               <div 
                 className="flex items-center justify-center px-1 py-1 h-12 cursor-text"
                 onClick={(e) => {
-                  e.stopPropagation();
+                //   e.stopPropagation();
                   handleAdditionalInfoFocus(index);
                 }}
               >

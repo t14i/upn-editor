@@ -22,7 +22,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
 import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode';
 import CustomEdge from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,11 +35,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import StartNode from './nodes/StartNode';
 import EndNode from './nodes/EndNode';
+import SlideInPanel from './SlideInPanel';
 
-const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) => {
+const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; nodeId?: string }>({ visible: false, x: 0, y: 0 });
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [connectingHandle, setConnectingHandle] = useState<ConnectingHandle | null>(null);
   const [notes, setNotes] = useState('');
@@ -152,12 +153,15 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
       const boundingRect = reactFlowWrapper.current?.getBoundingClientRect();
       if (boundingRect) {
         const targetElement = event.target as HTMLElement;
-        const isActivityNode = targetElement.closest('.react-flow__node-activity');
+        const node = targetElement.closest('.react-flow__node');
+        const nodeId = node ? node.getAttribute('data-id') || undefined : undefined;
+        const isActivityNode = node?.classList.contains('react-flow__node-activity');
         setContextMenuType(isActivityNode ? 'activity' : 'canvas');
         setContextMenu({
           visible: true,
           x: event.clientX - boundingRect.left,
           y: event.clientY - boundingRect.top,
+          nodeId,
         });
       }
     },
@@ -262,6 +266,57 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     custom: CustomEdge,
   }), []);
 
+  const [drilldownFlowId, setDrilldownFlowId] = useState<string | null>(null);
+  const [showSlideInPanel, setShowSlideInPanel] = useState(false);
+
+  const handleAddDrillDown = useCallback(async (nodeId: string) => {
+    if (!nodeId) return;
+    try {
+      const response = await fetch('/api/createFlow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Drilldown Flow',
+          flow_data: { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
+        }),
+      });
+      const result = await response.json();
+      if (result.data && result.data[0]) {
+        const newFlowId = result.data[0].id;
+        setNodes((nds) =>
+          nds.map((node) =>
+            node.id === nodeId
+              ? { ...node, data: { ...node.data, drilldownFlowId: newFlowId } }
+              : node
+          )
+        );
+        setDrilldownFlowId(newFlowId);
+        setShowSlideInPanel(true);
+      }
+    } catch (error) {
+      console.error('Error creating drilldown flow:', error);
+    }
+    closeContextMenu();
+  }, [closeContextMenu, setNodes]);
+
+  const handleOpenDrilldown = useCallback((flowId: string) => {
+    setDrilldownFlowId(flowId);
+    setShowSlideInPanel(true);
+  }, []);
+
+  const handleCloseSlideInPanel = useCallback(() => {
+    setShowSlideInPanel(false);
+    setDrilldownFlowId(null);
+  }, []);
+
+  const handleSlideOut = useCallback(() => {
+    if (onClose) {
+      onClose();
+    }
+  }, [onClose]);
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -269,38 +324,53 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
         onChange={(newText, newAdditionalInfo) =>
           updateNodeData(props.id, { verbPhrase: newText, additionalInfo: newAdditionalInfo })
         }
+        onOpenDrilldown={handleOpenDrilldown}
+        onAddDrilldown={() => handleAddDrillDown(props.id)}
       />
     ),
     start: StartNode,
     end: EndNode,
-  }), [updateNodeData]);
-
-  const handleAddDrillDown = useCallback(() => {
-    console.log('ドリルダウンを追加');
-    closeContextMenu();
-  }, [closeContextMenu]);
+  }), [updateNodeData, handleOpenDrilldown, handleAddDrillDown]);
 
   return (
     <div className="h-screen flex flex-col relative">
-      <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push('/')}
-          className="flex items-center space-x-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to List</span>
-        </Button>
-        <input
-          type="text"
-          value={flowName}
-          onChange={(e) => setFlowName(e.target.value)}
-          placeholder="Flow Name"
-          className="p-2 border rounded"
-        />
-        <Button onClick={saveToSupabase}>Save Flow</Button>
-      </div>
+      {!isSlideIn && (
+        <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to List</span>
+          </Button>
+          <input
+            type="text"
+            value={flowName}
+            onChange={(e) => setFlowName(e.target.value)}
+            placeholder="Flow Name"
+            className="p-2 border rounded"
+          />
+          <Button onClick={saveToSupabase}>Save Flow</Button>
+        </div>
+      )}
+      {isSlideIn && (
+        <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
+          <input
+            type="text"
+            value={flowName}
+            onChange={(e) => setFlowName(e.target.value)}
+            placeholder="Flow Name"
+            className="p-2 border rounded"
+          />
+          <Button onClick={saveToSupabase}>Save Flow</Button>
+          <Button variant="outline" size="sm" onClick={handleSlideOut} className="flex items-center">
+            <ChevronRight className="h-4 w-4 mr-1" />
+            <span>Close</span>
+          </Button>
+        </div>
+      )}
       <div className="flex-grow" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
@@ -343,7 +413,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
                   </DropdownMenuItem>
                 </>
               ) : (
-                <DropdownMenuItem onSelect={handleAddDrillDown}>
+                <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
                   ドリルダウンを追加
                 </DropdownMenuItem>
               )}
@@ -351,13 +421,20 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
           </DropdownMenu>
         )}
       </div>
+      {showSlideInPanel && (
+        <SlideInPanel onClose={handleCloseSlideInPanel}>
+          <UPNEditor flowId={drilldownFlowId} isSlideIn={true} onClose={handleCloseSlideInPanel} />
+        </SlideInPanel>
+      )}
     </div>
   );
 };
 
-// UPNEditorPropsの型定義を追加
+// UPNEditorPropsの型定義を更新
 interface UPNEditorProps {
   flowId: string | null;
+  isSlideIn?: boolean;
+  onClose?: () => void;
 }
 
 const UPNEditor: React.FC<UPNEditorProps> = (props) => (

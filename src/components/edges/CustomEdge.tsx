@@ -6,11 +6,7 @@ interface CustomEdgeData {
   onLabelChange: (edgeId: string, newLabel: string) => void;
 }
 
-export interface CustomEdgeProps extends EdgeProps {
-  data: CustomEdgeData;
-}
-
-const CustomEdge: React.FC<CustomEdgeProps> = ({
+const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
   id,
   sourceX,
   sourceY,
@@ -46,14 +42,14 @@ const CustomEdge: React.FC<CustomEdgeProps> = ({
   const onLabelKeyDown = useCallback((evt: React.KeyboardEvent<HTMLInputElement>) => {
     if (evt.key === 'Enter') {
       setIsEditing(false);
-      data.onLabelChange(id, label);
+      data?.onLabelChange(id, label);
     }
-  }, [id, label, data.onLabelChange]);
+  }, [id, label, data]);
 
   const onLabelBlur = useCallback(() => {
     setIsEditing(false);
-    data.onLabelChange(id, label);
-  }, [id, label, data.onLabelChange]);
+    data?.onLabelChange(id, label);
+  }, [id, label, data]);
 
   return (
     <>
