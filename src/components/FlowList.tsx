@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -36,6 +37,9 @@ const FlowList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [useSample, setUseSample] = useState(false);
   const router = useRouter();
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [flowToDelete, setFlowToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFlows = async () => {
@@ -109,6 +113,23 @@ const FlowList: React.FC = () => {
     }
   };
 
+  const handleDeleteFlow = async (id: string) => {
+    try {
+      const response = await fetch(`/api/deleteFlow?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        setFlows(flows.filter(flow => flow.id !== id));
+      } else {
+        console.error('Failed to delete flow');
+      }
+    } catch (error) {
+      console.error('Error deleting flow:', error);
+    }
+    setDeleteDialogOpen(false);
+    setFlowToDelete(null);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <Card>
@@ -161,11 +182,25 @@ const FlowList: React.FC = () => {
                     <TableCell>{formatDate(flow.created_at)}</TableCell>
                     <TableCell>{formatDate(flow.updated_at)}</TableCell>
                     <TableCell>
-                      <Link href={`/edit/${flow.id}`}>
-                        <Button variant="outline" size="sm">
-                          編集
+                      <div className="flex space-x-2">
+                        <Link href={`/edit/${flow.id}`}>
+                          <Button variant="outline" size="sm">
+                            編集
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setFlowToDelete(flow.id);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="border-red-500 text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          削除
                         </Button>
-                      </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -174,6 +209,25 @@ const FlowList: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>フローの削除</DialogTitle>
+            <DialogDescription>
+              このフローを削除してもよろしいですか？この操作は取り消せません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              キャンセル
+            </Button>
+            <Button variant="destructive" onClick={() => flowToDelete && handleDeleteFlow(flowToDelete)}>
+              削除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
