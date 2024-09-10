@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import ReactFlow, {
   Controls,
@@ -35,20 +35,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import StartNode from './nodes/StartNode';
 import EndNode from './nodes/EndNode';
-
-const nodeTypes: NodeTypes = {
-  activity: ActivityNode,
-  start: StartNode,
-  end: EndNode,
-};
-
-const edgeTypes: EdgeTypes = {
-  custom: CustomEdge as React.ComponentType<EdgeProps>,
-};
-
-interface UPNEditorProps {
-  flowId: string | null;
-}
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -212,9 +198,20 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     closeContextMenu();
   }, [nodes, contextMenu, closeContextMenu]);
 
+  const updateNodeData = useCallback((nodeId: string, newData: any) => {
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === nodeId
+          ? { ...node, data: { ...node.data, ...newData } }
+          : node
+      )
+    );
+  }, [setNodes]);
+
   const saveToSupabase = async () => {
     if (rfInstance) {
-      const flow = rfInstance.toObject();
+      const { nodes: currentNodes, edges: currentEdges, viewport } = rfInstance.toObject();
+      const flow = { nodes: currentNodes, edges: currentEdges, viewport };
       const payload = {
         name: flowName,
         flow_data: flow
@@ -255,6 +252,23 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
       }
     }
   };
+
+  const edgeTypes = useMemo(() => ({
+    custom: CustomEdge,
+  }), []);
+
+  const nodeTypes: NodeTypes = useMemo(() => ({
+    activity: (props) => (
+      <ActivityNode
+        {...props}
+        onChange={(newText, newAdditionalInfo) =>
+          updateNodeData(props.id, { verbPhrase: newText, additionalInfo: newAdditionalInfo })
+        }
+      />
+    ),
+    start: StartNode,
+    end: EndNode,
+  }), [updateNodeData]);
 
   return (
     <div className="h-screen flex flex-col relative">
@@ -322,6 +336,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     </div>
   );
 };
+
+// UPNEditorPropsの型定義を追加
+interface UPNEditorProps {
+  flowId: string | null;
+}
 
 const UPNEditor: React.FC<UPNEditorProps> = (props) => (
   <ReactFlowProvider>

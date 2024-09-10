@@ -10,11 +10,12 @@ export interface AdditionalInfo {
 }
 
 interface ActivityNodeProps {
+  id: string;
   data: {
     verbPhrase: string;
     additionalInfo: AdditionalInfo[];
-    onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => void;
   };
+  onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => void;
 }
 
 // タグの型を定義
@@ -36,7 +37,7 @@ const handleStyle = {
   borderRadius: '50%',
 };
 
-const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
+const ActivityNode: React.FC<ActivityNodeProps> = ({ id, data, onChange }) => {
   const [isEditing, setIsEditing] = useState(data.verbPhrase === '');
   const [text, setText] = useState(data.verbPhrase);
   const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo[]>(data.additionalInfo || []);
@@ -57,9 +58,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
 
   const handleBlur = () => {
     setIsEditing(false);
-    if (data.onChange) {
-      data.onChange(text, additionalInfo);
-    }
+    onChange(text, additionalInfo);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,9 +71,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
       setIsEditing(false);
       setFocusedIndex(null);
       setEditingTagIndex(null);
-      if (data.onChange) {
-        data.onChange(text, additionalInfo);
-      }
+      onChange(text, additionalInfo);
     }
   };
 
@@ -82,9 +79,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
     const newAdditionalInfo = [...additionalInfo];
     newAdditionalInfo[index] = { ...newAdditionalInfo[index], text: value };
     setAdditionalInfo(newAdditionalInfo);
-    if (data.onChange) {
-      data.onChange(text, newAdditionalInfo);
-    }
+    onChange(text, newAdditionalInfo);
   };
 
   const handleAdditionalInfoFocus = (index: number) => {
@@ -116,9 +111,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
   const removeAdditionalInfo = (index: number) => {
     const newAdditionalInfo = additionalInfo.filter((_, i) => i !== index);
     setAdditionalInfo(newAdditionalInfo);
-    if (data.onChange) {
-      data.onChange(text, newAdditionalInfo);
-    }
+    onChange(text, newAdditionalInfo);
   };
 
   const toggleTag = (index: number, tag: TagType) => {
@@ -130,9 +123,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
       newAdditionalInfo[index].tags = [...currentTags, tag];
     }
     setAdditionalInfo(newAdditionalInfo);
-    if (data.onChange) {
-      data.onChange(text, newAdditionalInfo);
-    }
+    onChange(text, newAdditionalInfo);
   };
 
   const handleTagClick = (index: number) => {
@@ -149,9 +140,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
       setFocusedIndex(null);
       setEditingTagIndex(null);
       setIsEditing(false);
-      if (data.onChange) {
-        data.onChange(text, additionalInfo);
-      }
+      onChange(text, additionalInfo);
     }
   };
 
@@ -160,9 +149,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({ data }) => {
     setIsEditing(true);
     setFocusedIndex(null);
     setEditingTagIndex(null);
-    if (data.onChange) {
-      data.onChange(text, additionalInfo);
-    }
+    onChange(text, additionalInfo);
   };
 
   return (
