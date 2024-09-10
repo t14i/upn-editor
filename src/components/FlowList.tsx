@@ -169,20 +169,20 @@ const FlowList: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead>Updated At</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="w-[40%]">Name</TableHead>
+                  <TableHead className="text-center">Created At</TableHead>
+                  <TableHead className="text-center">Updated At</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {flows.map((flow) => (
                   <TableRow key={flow.id}>
-                    <TableCell>{flow.name}</TableCell>
-                    <TableCell>{formatDate(flow.created_at)}</TableCell>
-                    <TableCell>{formatDate(flow.updated_at)}</TableCell>
+                    <TableCell className="w-[40%]">{flow.name}</TableCell>
+                    <TableCell className="text-center">{formatDate(flow.created_at)}</TableCell>
+                    <TableCell className="text-center">{formatDate(flow.updated_at)}</TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
+                      <div className="flex justify-center space-x-2">
                         <Link href={`/edit/${flow.id}`}>
                           <Button variant="outline" size="sm">
                             編集
