@@ -59,7 +59,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
   const [notes, setNotes] = useState('');
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
   const { setViewport } = useReactFlow();
-  const [flowObject, setFlowObject] = useState('');
   const [flowName, setFlowName] = useState('Untitled Flow');
   const [flowId, setFlowId] = useState<string | null>(initialFlowId);
 
@@ -72,7 +71,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
         const data = await response.json();
         if (data.data) {
           setFlowName(data.data.name);
-          setFlowObject(JSON.stringify(data.data.flow_data));
           setNodes(data.data.flow_data.nodes || []);
           setEdges(data.data.flow_data.edges || []);
           if (data.data.flow_data.viewport) {
@@ -214,38 +212,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
     closeContextMenu();
   }, [nodes, contextMenu, closeContextMenu]);
 
-  const onSave = useCallback(() => {
-    if (rfInstance) {
-      const flow = rfInstance.toObject();
-      setFlowObject(JSON.stringify(flow, null, 2));
-    }
-  }, [rfInstance]);
-
-  const onRestore = useCallback(() => {
-    const flow = JSON.parse(flowObject);
-    if (flow) {
-      const { x = 0, y = 0, zoom = 1 } = flow.viewport;
-      setNodes(flow.nodes || []);
-      setEdges(flow.edges || []);
-      setViewport({ x, y, zoom });
-    }
-  }, [flowObject, setNodes, setEdges, setViewport]);
-
-  const onRestoreSample = useCallback(() => {
-    const { nodes: sampleNodes, edges: sampleEdges, viewport } = sampleObject;
-    setNodes(sampleNodes || []);
-    setEdges((sampleEdges as Edge<any>[]) || []);
-    if (viewport) {
-      setViewport(viewport);
-    }
-  }, [setNodes, setEdges, setViewport]);
-
-  useEffect(() => {
-    if (rfInstance) {
-      onSave();
-    }
-  }, [rfInstance, nodes, edges, onSave]);
-
   const saveToSupabase = async () => {
     if (rfInstance) {
       const flow = rfInstance.toObject();
@@ -288,12 +254,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
         console.error('Network error:', error);
       }
     }
-    router.push('/');
   };
 
   return (
     <div className="h-screen flex flex-col relative">
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
         <Button
           variant="outline"
           size="sm"
@@ -303,6 +268,14 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
           <ArrowLeft className="h-4 w-4" />
           <span>Back to List</span>
         </Button>
+        <input
+          type="text"
+          value={flowName}
+          onChange={(e) => setFlowName(e.target.value)}
+          placeholder="Flow Name"
+          className="p-2 border rounded"
+        />
+        <Button onClick={saveToSupabase}>Save Flow</Button>
       </div>
       <div className="flex-grow" ref={reactFlowWrapper}>
         <ReactFlow
@@ -345,31 +318,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId }) =
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      </div>
-      <div 
-        className="absolute bottom-4 right-4 w-[400px] h-[600px] flex flex-col"
-        style={{ zIndex: 1000 }}
-      >
-        <div className="mb-2">
-          <input
-            type="text"
-            value={flowName}
-            onChange={(e) => setFlowName(e.target.value)}
-            placeholder="Flow Name"
-            className="w-full p-2 border rounded mb-2"
-          />
-        </div>
-        <div className="flex mb-2">
-          <Button onClick={onRestore} className="mr-2">Restore</Button>
-          <Button onClick={onRestoreSample} className="mr-2">Sample</Button>
-          <Button onClick={saveToSupabase}>Save Flow</Button>
-        </div>
-        <Textarea
-          value={flowObject}
-          onChange={(e) => setFlowObject(e.target.value)}
-          className="w-full flex-grow resize-none"
-          placeholder="Flow Objectデータ"
-        />
       </div>
     </div>
   );
