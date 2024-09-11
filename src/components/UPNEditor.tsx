@@ -36,6 +36,16 @@ import {
 import StartNode from './nodes/StartNode';
 import EndNode from './nodes/EndNode';
 import SlideInPanel from './SlideInPanel';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -49,25 +59,59 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [flowName, setFlowName] = useState('Untitled Flow');
   const [flowId, setFlowId] = useState<string | null>(initialFlowId);
 
+  const [isUnsaved, setIsUnsaved] = useState(false);
+  const [initialData, setInitialData] = useState<{ nodes: any[], edges: any[], flowName: string } | null>(null);
+
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [closeAction, setCloseAction] = useState<'backToList' | 'closeSlideIn' | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
-    if (flowId && flowId !== 'new') {
+    if (initialFlowId && initialFlowId !== 'new') {
       const fetchFlow = async () => {
-        const response = await fetch(`/api/getFlow?id=${flowId}`);
+        const response = await fetch(`/api/getFlow?id=${initialFlowId}`);
         const data = await response.json();
         if (data.data) {
-          setFlowName(data.data.name);
-          setNodes(data.data.flow_data.nodes || []);
-          setEdges(data.data.flow_data.edges || []);
+          const fetchedNodes = data.data.flow_data.nodes || [];
+          const fetchedEdges = data.data.flow_data.edges || [];
+          const fetchedFlowName = data.data.name;
+
+          setFlowName(fetchedFlowName);
+          setNodes(fetchedNodes);
+          setEdges(fetchedEdges);
           if (data.data.flow_data.viewport) {
             setViewport(data.data.flow_data.viewport);
           }
+          setFlowId(initialFlowId);
+          setInitialData({ nodes: fetchedNodes, edges: fetchedEdges, flowName: fetchedFlowName });
         }
       };
       fetchFlow();
+    } else {
+      setInitialData({ nodes: [], edges: [], flowName: 'Untitled Flow' });
     }
-  }, [flowId, setViewport]);
+  }, [initialFlowId, setViewport]);
+
+  const isDataChanged = useCallback(() => {
+    if (!initialData) return false;
+    
+    const nodesChanged = JSON.stringify(nodes) !== JSON.stringify(initialData.nodes);
+    const edgesChanged = JSON.stringify(edges) !== JSON.stringify(initialData.edges);
+    const flowNameChanged = flowName !== initialData.flowName;
+
+    return nodesChanged || edgesChanged || flowNameChanged;
+  }, [nodes, edges, flowName, initialData]);
+
+  useEffect(() => {
+    if (initialData) {
+      setIsUnsaved(isDataChanged());
+    }
+  }, [nodes, edges, flowName, initialData, isDataChanged]);
+
+  const onInit = useCallback((reactFlowInstance: ReactFlowInstance) => {
+    setRfInstance(reactFlowInstance);
+  }, []);
 
   const onEdgeLabelChange = useCallback((edgeId: string, newLabel: string) => {
     setEdges((eds) =>
@@ -217,7 +261,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     );
   }, [setNodes]);
 
-  const saveToSupabase = async () => {
+  const saveToSupabase = useCallback(async (): Promise<boolean> => {
     if (rfInstance) {
       const { nodes: currentNodes, edges: currentEdges, viewport } = rfInstance.toObject();
       const flow = { nodes: currentNodes, edges: currentEdges, viewport };
@@ -252,15 +296,21 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           if (result.data && result.data[0]) {
             setFlowId(result.data[0].id);
           }
+          setInitialData({ nodes: currentNodes, edges: currentEdges, flowName });
+          setIsUnsaved(false);
+          return true;
         } else {
           const errorText = await response.text();
           console.error('Error saving to Supabase:', errorText);
+          return false;
         }
       } catch (error) {
         console.error('Network error:', error);
+        return false;
       }
     }
-  };
+    return false;
+  }, [rfInstance, flowName, flowId]);
 
   const edgeTypes = useMemo(() => ({
     custom: CustomEdge,
@@ -317,6 +367,43 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     }
   }, [onClose]);
 
+  const handleClose = useCallback(async (action: 'backToList' | 'closeSlideIn') => {
+    if (isUnsaved) {
+      setCloseAction(action);
+      setShowSaveDialog(true);
+    } else {
+      if (action === 'backToList') {
+        router.push('/');
+      } else {
+        if (onClose) onClose();
+      }
+    }
+  }, [isUnsaved, router, onClose]);
+
+  const handleSaveAndClose = useCallback(async () => {
+    const saveSuccess = await saveToSupabase();
+    setShowSaveDialog(false);
+    if (saveSuccess) {
+      if (closeAction === 'backToList') {
+        router.push('/');
+      } else {
+        if (onClose) onClose();
+      }
+    } else {
+      // 保存に失敗した場合、ユーザーに通知するなどの処理を追加できます
+      console.error('Failed to save changes');
+    }
+  }, [saveToSupabase, closeAction, router, onClose]);
+
+  const handleCloseWithoutSaving = useCallback(() => {
+    setShowSaveDialog(false);
+    if (closeAction === 'backToList') {
+      router.push('/');
+    } else {
+      if (onClose) onClose();
+    }
+  }, [closeAction, router, onClose]);
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -339,7 +426,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           <Button
             variant="outline"
             size="sm"
-            onClick={() => router.push('/')}
+            onClick={() => handleClose('backToList')}
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -365,7 +452,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             className="p-2 border rounded"
           />
           <Button onClick={saveToSupabase}>Save Flow</Button>
-          <Button variant="outline" size="sm" onClick={handleSlideOut} className="flex items-center">
+          <Button variant="outline" size="sm" onClick={() => handleClose('closeSlideIn')} className="flex items-center">
             <ChevronRight className="h-4 w-4 mr-1" />
             <span>Close</span>
           </Button>
@@ -384,7 +471,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           onContextMenu={onContextMenu}
           onClick={closeContextMenu}
           connectionMode={ConnectionMode.Loose}
-          onInit={setRfInstance}
+          onInit={onInit}
         >
           <Controls />
           <Background />
@@ -426,6 +513,24 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           <UPNEditor flowId={drilldownFlowId} isSlideIn={true} onClose={handleCloseSlideInPanel} />
         </SlideInPanel>
       )}
+      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>保存されていない変更があります</AlertDialogTitle>
+            <AlertDialogDescription>
+              変更を保存しますか？保存せずに閉じると、変更内容が失われます。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseWithoutSaving}>
+              保存せずに閉じる
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveAndClose}>
+              保存して閉じる
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
