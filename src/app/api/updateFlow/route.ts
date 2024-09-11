@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
   const { id, name, flow_data } = await request.json()
 
@@ -23,5 +25,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ data })
+  const response = NextResponse.json({ data });
+  response.headers.set('Cache-Control', 'no-store, max-age=0');
+  return response;
 }
