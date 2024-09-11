@@ -1,8 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-export const revalidate = 0;
-
 export async function GET() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,15 +9,13 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('flows')
-    .select('id, name, created_at, updated_at')
-    .order('updated_at', { ascending: false })
+    .select('*')
+    .is('parent_flow_id', null)  // parent_flow_idがnullのものだけを選択
+    .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Supabase error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  console.log('API response:', JSON.stringify(data, null, 2));
 
   const response = NextResponse.json({ data });
   response.headers.set('Cache-Control', 'no-store, max-age=0');
