@@ -329,7 +329,8 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         },
         body: JSON.stringify({
           name: 'Drilldown Flow',
-          flow_data: { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
+          flow_data: { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } },
+          parent_flow_id: flowId  // 現在編集中のフローIDを親フローIDとして設定
         }),
       });
       const result = await response.json();
@@ -349,7 +350,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       console.error('Error creating drilldown flow:', error);
     }
     closeContextMenu();
-  }, [closeContextMenu, setNodes]);
+  }, [closeContextMenu, setNodes, flowId]);
 
   const handleOpenDrilldown = useCallback((flowId: string) => {
     setDrilldownFlowId(flowId);

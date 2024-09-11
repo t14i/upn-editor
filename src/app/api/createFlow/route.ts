@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
-  const { name, flow_data } = await request.json()
+  const { name, flow_data, parent_flow_id } = await request.json()
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,7 +11,9 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('flows')
-    .insert({ name, flow_data })
+    .insert([
+      { name, flow_data, parent_flow_id }  // parent_flow_idを追加
+    ])
     .select()
 
   if (error) {
