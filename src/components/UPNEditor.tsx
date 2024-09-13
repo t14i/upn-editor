@@ -80,6 +80,10 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [newLink, setNewLink] = useState({ name: '', url: '' });
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  const [showEditNumberDialog, setShowEditNumberDialog] = useState(false);
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [newNodeNumber, setNewNodeNumber] = useState<number | null>(null);
+
   useEffect(() => {
     if (initialFlowId && initialFlowId !== 'new') {
       const fetchFlow = async () => {
@@ -279,6 +283,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   }, []);
 
   const addNode = useCallback((type: 'activity' | 'start' | 'end') => {
+    const newNodeNumber = nodes.length + 1;
     const newNode = {
       id: (nodes.length + 1).toString(),
       type: type,
@@ -289,6 +294,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         resources: [],
         additionalInfo: [],
         isNew: true,
+        nodeNumber: newNodeNumber,
         onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => {
           setNodes((nds) =>
             nds.map((node) =>
@@ -492,6 +498,15 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     }
   }, [selectedNodeId, newLink, setNodes]);
 
+  const handleEditNodeNumber = useCallback(() => {
+    if (editingNodeId !== null && newNodeNumber !== null) {
+      updateNodeData(editingNodeId, { nodeNumber: newNodeNumber });
+      setShowEditNumberDialog(false);
+      setEditingNodeId(null);
+      setNewNodeNumber(null);
+    }
+  }, [editingNodeId, newNodeNumber, updateNodeData]);
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -601,6 +616,17 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => {
                     if (contextMenu.nodeId) {
+                      setEditingNodeId(contextMenu.nodeId);
+                      const currentNode = nodes.find(node => node.id === contextMenu.nodeId);
+                      setNewNodeNumber(currentNode?.data.nodeNumber || null);
+                      setShowEditNumberDialog(true);
+                    }
+                    closeContextMenu();
+                  }}>
+                    番号を編集
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => {
+                    if (contextMenu.nodeId) {
                       deleteNode(contextMenu.nodeId);
                     }
                     closeContextMenu();
@@ -688,6 +714,37 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           </div>
           <DialogFooter>
             <Button onClick={handleAddLink}>追加</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ノード番号編集ダイアログ */}
+      <Dialog open={showEditNumberDialog} onOpenChange={setShowEditNumberDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>ノード番号を編集</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="node-number" className="text-right">
+                新しい番号
+              </Label>
+              <Input
+                id="node-number"
+                type="number"
+                value={newNodeNumber !== null ? newNodeNumber : ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === '' || /^\d+$/.test(value)) {
+                    setNewNodeNumber(value === '' ? null : parseInt(value, 10));
+                  }
+                }}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleEditNodeNumber}>更新</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

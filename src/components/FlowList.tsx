@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Copy, MoreHorizontal } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import sampleObject from '../sample-object.json';
 
 interface Flow {
@@ -41,31 +48,35 @@ const FlowList: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [flowToDelete, setFlowToDelete] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchFlows = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('/api/getFlows', {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        });
-        const data = await response.json();
-        if (data.data) {
-          console.log('Fetched flows:', data.data);
-          setFlows(data.data);
-        }
-      } catch (error) {
-        console.error('Error fetching flows:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [flowToDuplicate, setFlowToDuplicate] = useState<Flow | null>(null);
+  const [newFlowName, setNewFlowName] = useState('');
 
-    fetchFlows();
+  const fetchFlows = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/getFlows', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      const data = await response.json();
+      if (data.data) {
+        console.log('Fetched flows:', data.data);
+        setFlows(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching flows:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchFlows();
+  }, [fetchFlows]);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
@@ -130,6 +141,39 @@ const FlowList: React.FC = () => {
     setFlowToDelete(null);
   };
 
+  const handleDuplicateFlow = async () => {
+    if (!flowToDuplicate) return;
+
+    try {
+      const response = await fetch('/api/duplicateFlow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ flowId: flowToDuplicate.id, newName: newFlowName }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Flow duplicated:', result.newFlowId);
+        // フローリストを再取得
+        fetchFlows();
+      } else {
+        console.error('Failed to duplicate flow');
+      }
+    } catch (error) {
+      console.error('Error duplicating flow:', error);
+    }
+    setDuplicateDialogOpen(false);
+    setFlowToDuplicate(null);
+    setNewFlowName('');
+  };
+
+  const openDuplicateDialog = (flow: Flow) => {
+    setFlowToDuplicate(flow);
+    setNewFlowName(`${flow.name} のコピー`);
+    setDuplicateDialogOpen(true);
+  };
+
   return (
     <div className="container mx-auto p-4">
       <Card>
@@ -188,18 +232,29 @@ const FlowList: React.FC = () => {
                             編集
                           </Button>
                         </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setFlowToDelete(flow.id);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="border-red-500 text-red-500 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          削除
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => openDuplicateDialog(flow)}>
+                              <Copy className="w-4 h-4 mr-2" />
+                              複製
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setFlowToDelete(flow.id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              削除
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -209,6 +264,39 @@ const FlowList: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* 複製ダイアログ */}
+      <Dialog open={duplicateDialogOpen} onOpenChange={setDuplicateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>フローの複製</DialogTitle>
+            <DialogDescription>
+              新しいフロー名を入力してください。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-flow-name" className="text-right">
+                フロー名
+              </Label>
+              <Input
+                id="new-flow-name"
+                value={newFlowName}
+                onChange={(e) => setNewFlowName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateDialogOpen(false)}>
+              キャンセル
+            </Button>
+            <Button onClick={handleDuplicateFlow}>
+              複製
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
