@@ -15,10 +15,12 @@ interface ActivityNodeProps {
     verbPhrase: string;
     additionalInfo: AdditionalInfo[];
     drilldownFlowId?: string;
+    links?: { name: string; url: string }[];
   };
   onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => void;
   onOpenDrilldown: (flowId: string) => void;
   onAddDrilldown: () => void;
+  onContextMenu: (event: React.MouseEvent) => void;
 }
 
 // タグの型を定義
@@ -45,7 +47,8 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
   data, 
   onChange, 
   onOpenDrilldown, 
-  onAddDrilldown 
+  onAddDrilldown,
+  onContextMenu
 }) => {
   const [isEditing, setIsEditing] = useState(data.verbPhrase === '');
   const [text, setText] = useState(data.verbPhrase);
@@ -174,6 +177,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
     <div 
       className="relative w-[300px] bg-white rounded-lg shadow-lg border-4 border-blue-500 overflow-visible text-center"
       onClick={handleOutsideClick}
+      onContextMenu={onContextMenu}
     >
       {/* ドリルダウンリンクマーク */}
       {data.drilldownFlowId && (
@@ -314,16 +318,22 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[220px]">
-          <div className="grid gap-4">
-            <div className="flex items-center gap-2">
-              <Link className="h-4 w-4" />
-              <span>Support site</span>
+          {data.links && data.links.length > 0 ? (
+            <div className="grid gap-4">
+              {data.links.map((link, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                    {link.name}
+                  </a>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <Thermometer className="h-4 w-4" />
-              <span>Tech support script</span>
+          ) : (
+            <div className="text-center py-2 text-gray-500">
+              関連情報はありません
             </div>
-          </div>
+          )}
         </PopoverContent>
       </Popover>
       <div className="flex flex-col items-center justify-center px-4 py-3 border-b border-gray-200 h-48 activity-text">

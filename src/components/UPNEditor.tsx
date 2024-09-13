@@ -46,6 +46,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -66,6 +75,10 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [closeAction, setCloseAction] = useState<'backToList' | 'closeSlideIn' | null>(null);
 
   const router = useRouter();
+
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [newLink, setNewLink] = useState({ name: '', url: '' });
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialFlowId && initialFlowId !== 'new') {
@@ -244,6 +257,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           setContextMenuType('edge');
         } else if (isActivityNode) {
           setContextMenuType('activity');
+          setSelectedNodeId(nodeId || null);
         } else {
           setContextMenuType('canvas');
         }
@@ -458,6 +472,26 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
   }, [setNodes, setEdges]);
 
+  const handleAddLink = useCallback(() => {
+    if (selectedNodeId && newLink.name && newLink.url) {
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.id === selectedNodeId
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  links: [...(node.data.links || []), newLink],
+                },
+              }
+            : node
+        )
+      );
+      setNewLink({ name: '', url: '' });
+      setShowLinkDialog(false);
+    }
+  }, [selectedNodeId, newLink, setNodes]);
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -467,11 +501,12 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         }
         onOpenDrilldown={handleOpenDrilldown}
         onAddDrilldown={() => handleAddDrillDown(props.id)}
+        onContextMenu={(event) => onContextMenu(event)}
       />
     ),
     start: StartNode,
     end: EndNode,
-  }), [updateNodeData, handleOpenDrilldown, handleAddDrillDown]);
+  }), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu]);
 
   return (
     <div className="h-screen flex flex-col relative">
@@ -555,6 +590,12 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                 </>
               ) : contextMenuType === 'activity' ? (
                 <>
+                  <DropdownMenuItem onSelect={() => {
+                    setShowLinkDialog(true);
+                    closeContextMenu();
+                  }}>
+                    関連リンクを追加
+                  </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
                     ドリルダウンを追加
                   </DropdownMenuItem>
@@ -614,6 +655,42 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 関連リンク追加ダイアログ */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>関連リンクを追加</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="link-name" className="text-right">
+                リンク名
+              </Label>
+              <Input
+                id="link-name"
+                value={newLink.name}
+                onChange={(e) => setNewLink({ ...newLink, name: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="link-url" className="text-right">
+                URL
+              </Label>
+              <Input
+                id="link-url"
+                value={newLink.url}
+                onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAddLink}>追加</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
