@@ -130,7 +130,8 @@ const FlowList: React.FC = () => {
         method: 'DELETE',
       });
       if (response.ok) {
-        setFlows(flows.filter(flow => flow.id !== id));
+        // フローリストを再取得して最新の状態を反映
+        await fetchFlows();
       } else {
         console.error('Failed to delete flow');
       }
