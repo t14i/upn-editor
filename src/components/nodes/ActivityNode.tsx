@@ -16,7 +16,7 @@ interface ActivityNodeProps {
     additionalInfo: AdditionalInfo[];
     drilldownFlowId?: string;
     links?: { name: string; url: string }[];
-    nodeNumber: number;  // 新しく追加
+    nodeNumber?: number;  // オプショナルに変更
   };
   onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => void;
   onOpenDrilldown: (flowId: string) => void;
@@ -185,10 +185,12 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
       onClick={handleOutsideClick}
       onContextMenu={onContextMenu}
     >
-      {/* ノード番号 */}
-      <div className="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-        {data.nodeNumber}
-      </div>
+      {/* ノード番号 (オプショナル) */}
+      {data.nodeNumber !== undefined && (
+        <div className="absolute top-2 left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+          {data.nodeNumber}
+        </div>
+      )}
 
       {/* ドリルダウンリンクマーク */}
       {data.drilldownFlowId && (

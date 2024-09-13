@@ -283,9 +283,10 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   }, []);
 
   const addNode = useCallback((type: 'activity' | 'start' | 'end') => {
-    const newNodeNumber = nodes.length + 1;
+    const newNodeId = `${type}-${Date.now()}`;
+    const newNodeNumber = nodes.filter(node => node.type === 'activity').length + 1;
     const newNode = {
-      id: (nodes.length + 1).toString(),
+      id: newNodeId,
       type: type,
       position: { x: contextMenu.x, y: contextMenu.y },
       data: {
@@ -294,11 +295,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         resources: [],
         additionalInfo: [],
         isNew: true,
-        nodeNumber: newNodeNumber,
+        nodeNumber: type === 'activity' ? newNodeNumber : undefined,
         onChange: (newText: string, newAdditionalInfo: AdditionalInfo[]) => {
           setNodes((nds) =>
             nds.map((node) =>
-              node.id === newNode.id
+              node.id === newNodeId
                 ? { 
                     ...node, 
                     data: { 
