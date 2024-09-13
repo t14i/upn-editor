@@ -54,7 +54,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
   const [isEditing, setIsEditing] = useState(data.verbPhrase === '');
   const [text, setText] = useState(data.verbPhrase);
   const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo[]>(data.additionalInfo || []);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const additionalInfoRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
@@ -74,17 +74,22 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
     onChange(text, additionalInfo);
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(event.target.value);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key === 'Enter') {
+  const handleKeyDown = async (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       setIsEditing(false);
       setFocusedIndex(null);
       setEditingTagIndex(null);
-      onChange(text, additionalInfo);
+      try {
+        await onChange(text, additionalInfo);
+      } catch (error) {
+        console.error('Error updating node:', error);
+        // ここでユーザーにエラーを通知することもできます
+      }
     }
   };
 
@@ -344,19 +349,26 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
       </Popover>
       <div className="flex flex-col items-center justify-center px-4 py-3 border-b border-gray-200 h-48 activity-text">
         {isEditing ? (
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={text}
-            onChange={handleChange}
+            onChange={(e) => setText(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="text-xl font-bold text-center w-full h-full focus:outline-none"
+            className="text-xl font-bold text-center w-full h-full resize-none focus:outline-none flex items-center justify-center"
             placeholder="アクティビティを入力"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0',
+              lineHeight: '1.2',
+              verticalAlign: 'middle',
+            }}
           />
         ) : (
           <h2 
-            className="text-xl font-bold cursor-pointer h-full flex items-center justify-center" 
+            className="text-xl font-bold cursor-pointer h-full flex items-center justify-center whitespace-pre-wrap" 
             onClick={handleActivityTextClick}
           >
             {text || 'アクティビティを入力'}
@@ -368,7 +380,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
           <div key={index} className="additional-info-item border-b border-gray-200 last:border-b-0">
             {focusedIndex === index || editingTagIndex === index ? (
               // 編集モード
-              <div className="flex items-center justify-center px-1 py-1 h-12" onKeyDown={handleKeyDown}>
+              <div className="flex items-center justify-center px-1 py-1 h-12">
                 <div className="flex items-center justify-center w-full">
                   <div className="flex space-x-0.5 mr-1">
                     {['R', 'A', 'C', 'I'].map((tag) => (
@@ -390,6 +402,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
                     onChange={(e) => handleAdditionalInfoChange(index, e.target.value)}
                     onFocus={() => handleAdditionalInfoFocus(index)}
                     onBlur={handleAdditionalInfoBlur}
+                    onKeyDown={handleKeyDown}  // ここにonKeyDownを追加
                     className="w-[100px] px-1 py-0.5 mx-1 h-full overflow-y-auto focus:outline-none text-left text-base"
                   />
                   <Button 
