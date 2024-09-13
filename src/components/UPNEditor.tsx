@@ -194,6 +194,22 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
   }, [setEdges]);
 
+  const reverseEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.map((edge) => {
+      if (edge.id === edgeId) {
+        const { source, target, sourceHandle, targetHandle } = edge;
+        return {
+          ...edge,
+          source: target,
+          target: source,
+          sourceHandle: targetHandle,
+          targetHandle: sourceHandle,
+        };
+      }
+      return edge;
+    }));
+  }, [setEdges]);
+
   const onContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
@@ -552,14 +568,24 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                   </DropdownMenuItem>
                 </>
               ) : (
-                <DropdownMenuItem onSelect={() => {
-                  if (contextMenu.edgeId) {
-                    deleteEdge(contextMenu.edgeId);
-                  }
-                  closeContextMenu();
-                }}>
-                  削除
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onSelect={() => {
+                    if (contextMenu.edgeId) {
+                      reverseEdge(contextMenu.edgeId);
+                    }
+                    closeContextMenu();
+                  }}>
+                    向きを逆転
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => {
+                    if (contextMenu.edgeId) {
+                      deleteEdge(contextMenu.edgeId);
+                    }
+                    closeContextMenu();
+                  }}>
+                    削除
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
