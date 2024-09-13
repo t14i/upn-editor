@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronDown, Link, Thermometer, Plus, X } from "lucide-react";
+import { Layers, Link, ChevronDown, Plus, X } from "lucide-react";
 import { Handle, Position } from 'reactflow';
 
 export interface AdditionalInfo {
@@ -187,7 +187,7 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
           className="absolute top-2 left-2 p-0"
           onClick={handleDrilldownClick}
         >
-          <Link className="h-4 w-4" />
+          <Layers className="h-4 w-4" />
         </Button>
       )}
 
