@@ -405,6 +405,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     }
   }, [closeAction, router, onClose]);
 
+  const deleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
+  }, [setNodes, setEdges]);
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -501,9 +506,19 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                   </DropdownMenuItem>
                 </>
               ) : (
-                <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
-                  ドリルダウンを追加
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
+                    ドリルダウンを追加
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => {
+                    if (contextMenu.nodeId) {
+                      deleteNode(contextMenu.nodeId);
+                    }
+                    closeContextMenu();
+                  }}>
+                    削除
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
