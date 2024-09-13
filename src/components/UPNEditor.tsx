@@ -50,12 +50,12 @@ import {
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; nodeId?: string }>({ visible: false, x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; nodeId?: string; edgeId?: string }>({ visible: false, x: 0, y: 0 });
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [connectingHandle, setConnectingHandle] = useState<ConnectingHandle | null>(null);
   const [notes, setNotes] = useState('');
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport } = useReactFlow();
+  const { setViewport, screenToFlowPosition } = useReactFlow();
   const [flowName, setFlowName] = useState('Untitled Flow');
   const [flowId, setFlowId] = useState<string | null>(initialFlowId);
 
@@ -188,28 +188,60 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     [setEdges]
   );
 
-  const [contextMenuType, setContextMenuType] = useState<'canvas' | 'activity'>('canvas');
+  const [contextMenuType, setContextMenuType] = useState<'canvas' | 'activity' | 'edge'>('canvas');
+
+  const deleteEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
+  }, [setEdges]);
 
   const onContextMenu = useCallback(
     (event: React.MouseEvent) => {
       event.preventDefault();
       event.stopPropagation();
-      const boundingRect = reactFlowWrapper.current?.getBoundingClientRect();
-      if (boundingRect) {
+      if (rfInstance) {
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+
         const targetElement = event.target as HTMLElement;
         const node = targetElement.closest('.react-flow__node');
+        const edge = rfInstance.getEdges().find(e => {
+          const edgeElement = document.querySelector(`[data-testid="rf__edge-${e.id}"]`);
+          if (edgeElement) {
+            const edgeRect = edgeElement.getBoundingClientRect();
+            return (
+              position.x >= edgeRect.left - 8 &&
+              position.x <= edgeRect.right + 8 &&
+              position.y >= edgeRect.top - 8 &&
+              position.y <= edgeRect.bottom + 8
+            );
+          }
+          return false;
+        });
+
         const nodeId = node ? node.getAttribute('data-id') || undefined : undefined;
+        const edgeId = edge ? edge.id : undefined;
         const isActivityNode = node?.classList.contains('react-flow__node-activity');
-        setContextMenuType(isActivityNode ? 'activity' : 'canvas');
+        
+        if (edge) {
+          setContextMenuType('edge');
+        } else if (isActivityNode) {
+          setContextMenuType('activity');
+        } else {
+          setContextMenuType('canvas');
+        }
+
         setContextMenu({
           visible: true,
-          x: event.clientX - boundingRect.left,
-          y: event.clientY - boundingRect.top,
+          x: event.clientX,
+          y: event.clientY,
           nodeId,
+          edgeId,
         });
       }
     },
-    [setContextMenu]
+    [setContextMenu, rfInstance, screenToFlowPosition]
   );
 
   const closeContextMenu = useCallback(() => {
@@ -505,7 +537,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                     エンドノードを追加
                   </DropdownMenuItem>
                 </>
-              ) : (
+              ) : contextMenuType === 'activity' ? (
                 <>
                   <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
                     ドリルダウンを追加
@@ -519,6 +551,15 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                     削除
                   </DropdownMenuItem>
                 </>
+              ) : (
+                <DropdownMenuItem onSelect={() => {
+                  if (contextMenu.edgeId) {
+                    deleteEdge(contextMenu.edgeId);
+                  }
+                  closeContextMenu();
+                }}>
+                  削除
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
