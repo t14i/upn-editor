@@ -22,7 +22,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Download } from 'lucide-react';
 import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode';
 import CustomEdge from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,12 +49,21 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { toPng, toJpeg } from 'html-to-image';
+import jsPDF from 'jspdf';
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -83,6 +92,90 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [showEditNumberDialog, setShowEditNumberDialog] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
   const [newNodeNumber, setNewNodeNumber] = useState<number | null>(null);
+
+  const [downloadFormat, setDownloadFormat] = useState<'PNG' | 'JPEG' | 'PDF'>('PNG');
+  const [downloadResolution, setDownloadResolution] = useState<'低' | '中' | '高'>('中');
+
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+
+  const handleDownloadClick = useCallback(() => {
+    setShowDownloadModal(true);
+  }, []);
+
+  const handleDownload = useCallback(async () => {
+    if (reactFlowWrapper.current) {
+      const flowElement = reactFlowWrapper.current.querySelector('.react-flow__viewport');
+      if (!flowElement) return;
+
+      const scaleMap: Record<'低' | '中' | '高', number> = {
+        '低': 1,
+        '中': 2,
+        '高': 3,
+      };
+      const scale = scaleMap[downloadResolution];
+
+      let dataUrl;
+      try {
+        if (downloadFormat === 'PNG') {
+          dataUrl = await toPng(flowElement, { 
+            backgroundColor: '#ffffff',
+            width: flowElement.clientWidth * scale,
+            height: flowElement.clientHeight * scale,
+            style: {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: `${flowElement.clientWidth}px`,
+              height: `${flowElement.clientHeight}px`,
+            }
+          });
+        } else if (downloadFormat === 'JPEG') {
+          dataUrl = await toJpeg(flowElement, { 
+            backgroundColor: '#ffffff',
+            width: flowElement.clientWidth * scale,
+            height: flowElement.clientHeight * scale,
+            style: {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: `${flowElement.clientWidth}px`,
+              height: `${flowElement.clientHeight}px`,
+            }
+          });
+        } else if (downloadFormat === 'PDF') {
+          const imgData = await toPng(flowElement, { 
+            backgroundColor: '#ffffff',
+            width: flowElement.clientWidth * scale,
+            height: flowElement.clientHeight * scale,
+            style: {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: `${flowElement.clientWidth}px`,
+              height: `${flowElement.clientHeight}px`,
+            }
+          });
+          const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: [flowElement.clientWidth, flowElement.clientHeight],
+          });
+          pdf.addImage(imgData, 'PNG', 0, 0, flowElement.clientWidth, flowElement.clientHeight);
+          pdf.save(`${flowName}.pdf`);
+          setShowDownloadModal(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error generating image:', error);
+        return;
+      }
+
+      if (dataUrl) {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `${flowName}.${downloadFormat.toLowerCase()}`;
+        link.click();
+      }
+    }
+    setShowDownloadModal(false);
+  }, [downloadFormat, downloadResolution, flowName, reactFlowWrapper]);
 
   useEffect(() => {
     if (initialFlowId && initialFlowId !== 'new') {
@@ -545,6 +638,16 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             className="p-2 border rounded"
           />
           <Button onClick={saveToSupabase}>Save Flow</Button>
+          {/* ダウンロードボタンを追加 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center border border-gray-300"
+            onClick={handleDownloadClick}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            ダウンロード
+          </Button>
         </div>
       )}
       {isSlideIn && (
@@ -560,6 +663,16 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           <Button variant="outline" size="sm" onClick={() => handleClose('closeSlideIn')} className="flex items-center">
             <ChevronRight className="h-4 w-4 mr-1" />
             <span>Close</span>
+          </Button>
+          {/* ダウンロードボタンを追加 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center border border-gray-300"
+            onClick={handleDownloadClick}
+          >
+            <Download className="h-4 w-4 mr-1" />
+            ダウンロード
           </Button>
         </div>
       )}
@@ -746,6 +859,70 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           </div>
           <DialogFooter>
             <Button onClick={handleEditNodeNumber}>更新</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ダウンロードモーダル */}
+      <Dialog open={showDownloadModal} onOpenChange={setShowDownloadModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>フローをエクスポート</DialogTitle>
+            <DialogDescription>
+              ファイル形式と画質を選択してください。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>ファイル形式</Label>
+              <RadioGroup
+                value={downloadFormat}
+                onValueChange={(value) => setDownloadFormat(value as 'PNG' | 'JPEG' | 'PDF')}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="PNG" id="format-png" />
+                  <Label htmlFor="format-png">PNG</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="JPEG" id="format-jpeg" />
+                  <Label htmlFor="format-jpeg">JPEG</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="PDF" id="format-pdf" />
+                  <Label htmlFor="format-pdf">PDF</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="space-y-2">
+              <Label>画質</Label>
+              <RadioGroup
+                value={downloadResolution}
+                onValueChange={(value) => setDownloadResolution(value as '低' | '中' | '高')}
+                className="flex flex-col space-y-1"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="低" id="resolution-low" />
+                  <Label htmlFor="resolution-low">低 (1x)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="中" id="resolution-medium" />
+                  <Label htmlFor="resolution-medium">中 (2x)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="高" id="resolution-high" />
+                  <Label htmlFor="resolution-high">高 (3x)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDownloadModal(false)}>
+              キャンセル
+            </Button>
+            <Button onClick={handleDownload}>
+              ダウンロード
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
