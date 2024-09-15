@@ -49,21 +49,15 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { toPng, toJpeg } from 'html-to-image';
-import jsPDF from 'jspdf';
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
+import DownloadArea from './DownloadArea';
+import DownloadModal from './DownloadModal';
+import { handleDownload as handleDownloadUtil } from '../utils/downloadUtils';
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -73,7 +67,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [connectingHandle, setConnectingHandle] = useState<ConnectingHandle | null>(null);
   const [notes, setNotes] = useState('');
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
-  const { setViewport, screenToFlowPosition } = useReactFlow();
+  const { setViewport, screenToFlowPosition, getViewport } = useReactFlow();
   const [flowName, setFlowName] = useState('Untitled Flow');
   const [flowId, setFlowId] = useState<string | null>(initialFlowId);
 
@@ -95,87 +89,112 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
 
   const [downloadFormat, setDownloadFormat] = useState<'PNG' | 'JPEG' | 'PDF'>('PNG');
   const [downloadResolution, setDownloadResolution] = useState<'低' | '中' | '高'>('中');
-
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showDownloadArea, setShowDownloadArea] = useState(false);
+  const [downloadArea, setDownloadArea] = useState({ width: 0, height: 0 });
+  const [downloadAreaPosition, setDownloadAreaPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const initializeDownloadArea = useCallback(() => {
+    if (reactFlowWrapper.current) {
+      const { width: screenWidth, height: screenHeight } = reactFlowWrapper.current.getBoundingClientRect();
+      
+      const areaHeight = screenHeight * 0.85; // 画面高さの85%
+      const areaWidth = areaHeight * 16 / 9; // 9:16の比率
+
+      setDownloadArea({
+        width: areaWidth,
+        height: areaHeight
+      });
+
+      setDownloadAreaPosition({
+        x: (screenWidth - areaWidth) / 2, // 水平方向の中央
+        y: screenHeight * 0.1 // 画面の上10%の位置
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    initializeDownloadArea();
+    window.addEventListener('resize', initializeDownloadArea);
+    return () => {
+      window.removeEventListener('resize', initializeDownloadArea);
+    };
+  }, [initializeDownloadArea]);
 
   const handleDownloadClick = useCallback(() => {
+    setShowDownloadArea(true);
+    initializeDownloadArea(); // DownloadArea表示時に再度サイズと位置を調整
+  }, [initializeDownloadArea]);
+
+  const handleDownloadAreaConfirm = useCallback(() => {
+    setShowDownloadArea(false);
     setShowDownloadModal(true);
   }, []);
+
+  const handleDownloadAreaCancel = useCallback(() => {
+    setShowDownloadArea(false);
+  }, []);
+
+  const handleDownloadAreaMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - downloadAreaPosition.x,
+        y: e.clientY - downloadAreaPosition.y
+      });
+    }
+  };
+
+  const handleDownloadAreaMouseMove = useCallback((e: MouseEvent) => {
+    if (isDragging && reactFlowWrapper.current) {
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const newX = Math.max(0, Math.min(e.clientX - dragStart.x, bounds.width - downloadArea.width));
+      const newY = Math.max(0, Math.min(e.clientY - dragStart.y, bounds.height - downloadArea.height));
+      setDownloadAreaPosition({ x: newX, y: newY });
+    }
+  }, [isDragging, dragStart, downloadArea]);
+
+  const handleDownloadAreaMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDownloadAreaMouseMove);
+      window.addEventListener('mouseup', handleDownloadAreaMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleDownloadAreaMouseMove);
+      window.removeEventListener('mouseup', handleDownloadAreaMouseUp);
+    };
+  }, [isDragging, handleDownloadAreaMouseMove, handleDownloadAreaMouseUp]);
 
   const handleDownload = useCallback(async () => {
     if (reactFlowWrapper.current) {
       const flowElement = reactFlowWrapper.current.querySelector('.react-flow__viewport');
       if (!flowElement) return;
 
-      const scaleMap: Record<'低' | '中' | '高', number> = {
-        '低': 1,
-        '中': 2,
-        '高': 3,
-      };
-      const scale = scaleMap[downloadResolution];
-
-      let dataUrl;
-      try {
-        if (downloadFormat === 'PNG') {
-          dataUrl = await toPng(flowElement, { 
-            backgroundColor: '#ffffff',
-            width: flowElement.clientWidth * scale,
-            height: flowElement.clientHeight * scale,
-            style: {
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              width: `${flowElement.clientWidth}px`,
-              height: `${flowElement.clientHeight}px`,
-            }
-          });
-        } else if (downloadFormat === 'JPEG') {
-          dataUrl = await toJpeg(flowElement, { 
-            backgroundColor: '#ffffff',
-            width: flowElement.clientWidth * scale,
-            height: flowElement.clientHeight * scale,
-            style: {
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              width: `${flowElement.clientWidth}px`,
-              height: `${flowElement.clientHeight}px`,
-            }
-          });
-        } else if (downloadFormat === 'PDF') {
-          const imgData = await toPng(flowElement, { 
-            backgroundColor: '#ffffff',
-            width: flowElement.clientWidth * scale,
-            height: flowElement.clientHeight * scale,
-            style: {
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              width: `${flowElement.clientWidth}px`,
-              height: `${flowElement.clientHeight}px`,
-            }
-          });
-          const pdf = new jsPDF({
-            orientation: 'landscape',
-            unit: 'px',
-            format: [flowElement.clientWidth, flowElement.clientHeight],
-          });
-          pdf.addImage(imgData, 'PNG', 0, 0, flowElement.clientWidth, flowElement.clientHeight);
-          pdf.save(`${flowName}.pdf`);
-          setShowDownloadModal(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error generating image:', error);
-        return;
-      }
-
-      if (dataUrl) {
-        const link = document.createElement('a');
-        link.href = dataUrl;
-        link.download = `${flowName}.${downloadFormat.toLowerCase()}`;
-        link.click();
-      }
+      const { x, y, zoom } = getViewport();
+      const flowBounds = flowElement.getBoundingClientRect();
+      
+      await handleDownloadUtil({
+        flowElement: flowElement as HTMLElement,
+        downloadFormat,
+        downloadResolution,
+        selectedArea: {
+          x: (downloadAreaPosition.x - flowBounds.left) / zoom,
+          y: (downloadAreaPosition.y - flowBounds.top) / zoom,
+          width: downloadArea.width / zoom,
+          height: downloadArea.height / zoom,
+        },
+        flowName,
+        zoom,
+      });
     }
     setShowDownloadModal(false);
-  }, [downloadFormat, downloadResolution, flowName, reactFlowWrapper]);
+  }, [downloadFormat, downloadResolution, flowName, reactFlowWrapper, downloadArea, downloadAreaPosition, getViewport]);
 
   useEffect(() => {
     if (initialFlowId && initialFlowId !== 'new') {
@@ -863,74 +882,33 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         </DialogContent>
       </Dialog>
 
-      {/* ダウンロードモーダル */}
-      <Dialog open={showDownloadModal} onOpenChange={setShowDownloadModal}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>フローをエクスポート</DialogTitle>
-            <DialogDescription>
-              ファイル形式と画質を選択してください。
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label>ファイル形式</Label>
-              <RadioGroup
-                value={downloadFormat}
-                onValueChange={(value) => setDownloadFormat(value as 'PNG' | 'JPEG' | 'PDF')}
-                className="flex flex-col space-y-1"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="PNG" id="format-png" />
-                  <Label htmlFor="format-png">PNG</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="JPEG" id="format-jpeg" />
-                  <Label htmlFor="format-jpeg">JPEG</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="PDF" id="format-pdf" />
-                  <Label htmlFor="format-pdf">PDF</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            <div className="space-y-2">
-              <Label>画質</Label>
-              <RadioGroup
-                value={downloadResolution}
-                onValueChange={(value) => setDownloadResolution(value as '低' | '中' | '高')}
-                className="flex flex-col space-y-1"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="低" id="resolution-low" />
-                  <Label htmlFor="resolution-low">低 (1x)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="中" id="resolution-medium" />
-                  <Label htmlFor="resolution-medium">中 (2x)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="高" id="resolution-high" />
-                  <Label htmlFor="resolution-high">高 (3x)</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDownloadModal(false)}>
-              キャンセル
-            </Button>
-            <Button onClick={handleDownload}>
-              ダウンロード
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DownloadModal
+        showDownloadModal={showDownloadModal}
+        setShowDownloadModal={setShowDownloadModal}
+        downloadFormat={downloadFormat}
+        setDownloadFormat={setDownloadFormat}
+        downloadResolution={downloadResolution}
+        setDownloadResolution={setDownloadResolution}
+        handleDownload={handleDownload}
+      />
+
+      {showDownloadArea && (
+        <DownloadArea
+          downloadArea={downloadArea}
+          downloadAreaPosition={downloadAreaPosition}
+          setDownloadArea={setDownloadArea}
+          setDownloadAreaPosition={setDownloadAreaPosition}
+          setIsDragging={setIsDragging}
+          handleDownloadAreaMouseDown={handleDownloadAreaMouseDown}
+          handleDownloadAreaConfirm={handleDownloadAreaConfirm}
+          handleDownloadAreaCancel={handleDownloadAreaCancel}
+          reactFlowWrapper={reactFlowWrapper}
+        />
+      )}
     </div>
   );
 };
 
-// UPNEditorPropsの型定義を更新
 interface UPNEditorProps {
   flowId: string | null;
   isSlideIn?: boolean;
