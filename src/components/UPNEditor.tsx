@@ -356,23 +356,10 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       if (rfInstance) {
         const targetElement = event.target as HTMLElement;
         const node = targetElement.closest('.react-flow__node');
-        const edge = rfInstance.getEdges().find(e => {
-          const edgeElement = document.querySelector(`[data-testid="rf__edge-${e.id}"]`);
-          if (edgeElement) {
-            const edgeRect = edgeElement.getBoundingClientRect();
-            const position = rfInstance.project({ x: event.clientX, y: event.clientY });
-            return (
-              position.x >= edgeRect.left - 8 &&
-              position.x <= edgeRect.right + 8 &&
-              position.y >= edgeRect.top - 8 &&
-              position.y <= edgeRect.bottom + 8
-            );
-          }
-          return false;
-        });
+        const edge = targetElement.closest('.react-flow__edge');
 
         const nodeId = node ? node.getAttribute('data-id') || undefined : undefined;
-        const edgeId = edge ? edge.id : undefined;
+        const edgeId = edge ? edge.getAttribute('data-id') || undefined : undefined;
         const isActivityNode = node?.classList.contains('react-flow__node-activity');
         const isStickyNoteNode = node?.classList.contains('react-flow__node-stickyNote');
         

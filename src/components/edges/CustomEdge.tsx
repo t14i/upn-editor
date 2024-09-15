@@ -54,10 +54,17 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
   return (
     <>
       <path
+        className="react-flow__edge-path-selector"
+        d={edgePath}
+        fill="none"
+        strokeWidth={48}
+        stroke="transparent"
+      />
+      <path
         id={id}
         style={{
           ...style,
-          strokeWidth: 3,
+          strokeWidth: 3,  // 視覚的な太さを3に設定
           stroke: '#555',
         }}
         className="react-flow__edge-path"
@@ -69,12 +76,11 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-            fontSize: 16,  // フォントサイズを大きくしました
+            fontSize: 16,
             pointerEvents: 'all',
             backgroundColor: 'white',
-            padding: '4px 8px',  // パディングを少し増やしました
+            padding: '4px 8px',
             borderRadius: '4px',
-            // border を削除しました
             minWidth: '80px',
             textAlign: 'center',
           }}
@@ -94,7 +100,7 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
                 outline: 'none',
                 width: '100%',
                 textAlign: 'center',
-                fontSize: 16,  // 入力フィールドのフォントサイズも合わせました
+                fontSize: 16,
               }}
             />
           ) : (
