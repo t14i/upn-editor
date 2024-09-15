@@ -1,8 +1,15 @@
-import React, { useCallback, useState, MouseEvent } from 'react';
+import React, { useCallback, useState, MouseEvent, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Resizable, ResizeDirection } from 're-resizable';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DownloadAreaProps {
   downloadArea: { width: number; height: number };
@@ -15,6 +22,8 @@ interface DownloadAreaProps {
   handleDownloadAreaCancel: () => void;
   reactFlowWrapper: React.RefObject<HTMLDivElement>;
 }
+
+type AspectRatio = '16:9' | '4:3' | '1:1' | 'Custom';
 
 const DownloadArea: React.FC<DownloadAreaProps> = ({
   downloadArea,
@@ -32,6 +41,7 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
   const [dragStartPosition, setDragStartPosition] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
   const [isAspectRatioLocked, setIsAspectRatioLocked] = useState(true);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
 
   const handleMouseEnter = () => {
     document.body.style.cursor = 'grab';
@@ -42,6 +52,21 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
       document.body.style.cursor = 'default';
     }
   };
+
+  const calculateNewSize = useCallback((width: number, height: number, newAspectRatio: AspectRatio) => {
+    if (newAspectRatio === 'Custom') return { width, height };
+
+    const ratios = {
+      '16:9': 16 / 9,
+      '4:3': 4 / 3,
+      '1:1': 1,
+    };
+
+    const ratio = ratios[newAspectRatio];
+    const newWidth = height * ratio;
+
+    return { width: newWidth, height };
+  }, []);
 
   const onResize = useCallback(
     ({ delta, direction }: { delta: { width: number; height: number }, direction: ResizeDirection }) => {
@@ -56,12 +81,9 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
       let newY = downloadAreaPosition.y;
 
       if (isAspectRatioLocked) {
-        const aspectRatio = dragStartSize.width / dragStartSize.height;
-        if (Math.abs(delta.width) > Math.abs(delta.height)) {
-          newHeight = newWidth / aspectRatio;
-        } else {
-          newWidth = newHeight * aspectRatio;
-        }
+        const result = calculateNewSize(newWidth, newHeight, aspectRatio);
+        newWidth = result.width;
+        newHeight = result.height;
       }
 
       if (directions.indexOf(direction) !== -1) {
@@ -77,8 +99,12 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
 
       setDownloadAreaPosition({ x: newX, y: newY });
       setDownloadArea({ width: newWidth, height: newHeight });
+
+      if (!isAspectRatioLocked) {
+        setAspectRatio('Custom');
+      }
     },
-    [dragStartSize, setDownloadArea, setDownloadAreaPosition, downloadAreaPosition, isAspectRatioLocked]
+    [dragStartSize, setDownloadArea, setDownloadAreaPosition, downloadAreaPosition, isAspectRatioLocked, aspectRatio, calculateNewSize]
   );
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
@@ -107,7 +133,7 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
     document.body.style.cursor = 'grab';
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDraggingArea) {
       window.addEventListener('mousemove', handleMouseMove as any);
       window.addEventListener('mouseup', handleMouseUp);
@@ -120,6 +146,14 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDraggingArea, handleMouseMove, handleMouseUp]);
+
+  const handleAspectRatioChange = (newAspectRatio: AspectRatio) => {
+    setAspectRatio(newAspectRatio);
+    if (newAspectRatio !== 'Custom') {
+      const newSize = calculateNewSize(downloadArea.width, downloadArea.height, newAspectRatio);
+      setDownloadArea(newSize);
+    }
+  };
 
   return (
     <div style={{ position: 'absolute', left: downloadAreaPosition.x, top: downloadAreaPosition.y }}>
@@ -135,6 +169,21 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
           />
           <Label htmlFor="aspect-ratio-lock">縦横比を固定</Label>
         </div>
+        <Select
+          value={aspectRatio}
+          onValueChange={(value: AspectRatio) => handleAspectRatioChange(value)}
+          disabled={!isAspectRatioLocked}
+        >
+          <SelectTrigger className={`w-[100px] ${!isAspectRatioLocked ? 'text-gray-400' : ''}`}>
+            <SelectValue placeholder="縦横比" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="16:9">16:9</SelectItem>
+            <SelectItem value="4:3">4:3</SelectItem>
+            <SelectItem value="1:1">1:1</SelectItem>
+            <SelectItem value="Custom">Custom</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="outline" onClick={handleDownloadAreaCancel}>
           キャンセル
         </Button>
@@ -184,6 +233,7 @@ const DownloadArea: React.FC<DownloadAreaProps> = ({
             bottomLeft: 'w-1 h-1 bg-white border-2 border-black rounded-full absolute bottom-0 left-0 -mb-0 -ml-0',
             topLeft: 'w-1 h-1 bg-white border-2 border-black rounded-full absolute top-0 left-0 -mt-0 -ml-0'
           }}
+          lockAspectRatio={isAspectRatioLocked}
         >
           <div 
             className="w-full h-full border-2 border-dashed border-black bg-black bg-opacity-10"
