@@ -37,12 +37,16 @@ export const handleDownload = async ({
       width: selectedArea.width * scale,
       height: selectedArea.height * scale,
       style: {
-        transform: `translate(${-selectedArea.x * scale}px, ${-selectedArea.y * scale}px) scale(${scale * zoom})`,
+        transform: `translate(${-selectedArea.x * scale}px, ${-selectedArea.y * scale}px) scale(${scale})`,
         transformOrigin: 'top left',
         width: `${flowElement.clientWidth}px`,
         height: `${flowElement.clientHeight}px`,
       },
+      pixelRatio: scale, // zoomを除外し、scaleのみに設定
     };
+
+    // デバッグログを追加
+    console.log('Download Options:', options);
 
     if (downloadFormat === 'PNG' || downloadFormat === 'JPEG') {
       const imageFunction = downloadFormat === 'PNG' ? toPng : toJpeg;

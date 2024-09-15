@@ -179,29 +179,47 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   }, [isDragging, handleDownloadAreaMouseMove, handleDownloadAreaMouseUp]);
 
   const handleDownload = useCallback(async () => {
-    if (reactFlowWrapper.current) {
+    if (reactFlowWrapper.current && rfInstance) {
       const flowElement = reactFlowWrapper.current.querySelector('.react-flow__viewport');
       if (!flowElement) return;
 
-      const { x, y, zoom } = getViewport();
-      const flowBounds = flowElement.getBoundingClientRect();
-      
+      // 現在のビューポート情報を取得
+      const { x: viewportX, y: viewportY, zoom } = rfInstance.getViewport();
+      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+
+      // ReactFlow座標系に変換（ビューポートの位置を考慮して減算）
+      const selectedAreaInReactFlow = {
+        x: (downloadAreaPosition.x - reactFlowBounds.left) / zoom - viewportX / zoom,
+        y: (downloadAreaPosition.y - reactFlowBounds.top) / zoom - viewportY / zoom,
+        width: downloadArea.width / zoom,
+        height: downloadArea.height / zoom,
+      };
+
+      // デバッグログを追加
+      console.log('Viewport:', { viewportX, viewportY, zoom });
+      console.log('ReactFlow Bounds:', reactFlowBounds);
+      console.log('Download Area Position:', downloadAreaPosition);
+      console.log('Selected Area in ReactFlow:', selectedAreaInReactFlow);
+
       await handleDownloadUtil({
         flowElement: flowElement as HTMLElement,
         downloadFormat,
         downloadResolution,
-        selectedArea: {
-          x: (downloadAreaPosition.x - flowBounds.left) / zoom,
-          y: (downloadAreaPosition.y - flowBounds.top) / zoom,
-          width: downloadArea.width / zoom,
-          height: downloadArea.height / zoom,
-        },
+        selectedArea: selectedAreaInReactFlow,
         flowName,
         zoom,
       });
     }
     setShowDownloadModal(false);
-  }, [downloadFormat, downloadResolution, flowName, reactFlowWrapper, downloadArea, downloadAreaPosition, getViewport]);
+  }, [
+    downloadFormat,
+    downloadResolution,
+    flowName,
+    reactFlowWrapper,
+    downloadArea,
+    downloadAreaPosition,
+    rfInstance,
+  ]);
 
   useEffect(() => {
     if (initialFlowId && initialFlowId !== 'new') {
