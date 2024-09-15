@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  const { id, name, flow_data } = await request.json()
+  const { id, name, flow_data, note } = await request.json()
 
   if (!id) {
     return NextResponse.json({ error: "ID is required for update" }, { status: 400 })
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('flows')
-    .update({ name, flow_data })
+    .update({ name, flow_data, note })
     .eq('id', id)
     .select()
 

@@ -22,7 +22,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ChevronRight, Download } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Download, StickyNote } from 'lucide-react';
 import ActivityNode, { AdditionalInfo } from './nodes/ActivityNode';
 import CustomEdge from './edges/CustomEdge';
 import { Textarea } from '@/components/ui/textarea';
@@ -58,6 +58,7 @@ import { Input } from "@/components/ui/input"
 import DownloadArea from './DownloadArea';
 import DownloadModal from './DownloadModal';
 import { handleDownload as handleDownloadUtil } from '../utils/downloadUtils';
+import NotePanel from './NotePanel';
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -72,7 +73,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [flowId, setFlowId] = useState<string | null>(initialFlowId);
 
   const [isUnsaved, setIsUnsaved] = useState(false);
-  const [initialData, setInitialData] = useState<{ nodes: any[], edges: any[], flowName: string } | null>(null);
+  const [initialData, setInitialData] = useState<{ nodes: any[], edges: any[], flowName: string, note: string } | null>(null);
 
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [closeAction, setCloseAction] = useState<'backToList' | 'closeSlideIn' | null>(null);
@@ -95,6 +96,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   const [downloadAreaPosition, setDownloadAreaPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const [showNotePanel, setShowNotePanel] = useState(false);
+  const [noteContent, setNoteContent] = useState('');
+
+  const [showSlideInNotePanel, setShowSlideInNotePanel] = useState(false);
 
   const initializeDownloadArea = useCallback(() => {
     if (reactFlowWrapper.current) {
@@ -205,20 +211,22 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           const fetchedNodes = data.data.flow_data.nodes || [];
           const fetchedEdges = data.data.flow_data.edges || [];
           const fetchedFlowName = data.data.name;
+          const fetchedNote = data.data.note || '';
 
           setFlowName(fetchedFlowName);
           setNodes(fetchedNodes);
           setEdges(fetchedEdges);
+          setNoteContent(fetchedNote);
           if (data.data.flow_data.viewport) {
             setViewport(data.data.flow_data.viewport);
           }
           setFlowId(initialFlowId);
-          setInitialData({ nodes: fetchedNodes, edges: fetchedEdges, flowName: fetchedFlowName });
+          setInitialData({ nodes: fetchedNodes, edges: fetchedEdges, flowName: fetchedFlowName, note: fetchedNote });
         }
       };
       fetchFlow();
     } else {
-      setInitialData({ nodes: [], edges: [], flowName: 'Untitled Flow' });
+      setInitialData({ nodes: [], edges: [], flowName: 'Untitled Flow', note: '' });
     }
   }, [initialFlowId, setViewport]);
 
@@ -228,15 +236,16 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     const nodesChanged = JSON.stringify(nodes) !== JSON.stringify(initialData.nodes);
     const edgesChanged = JSON.stringify(edges) !== JSON.stringify(initialData.edges);
     const flowNameChanged = flowName !== initialData.flowName;
+    const noteChanged = noteContent !== initialData.note;
 
-    return nodesChanged || edgesChanged || flowNameChanged;
-  }, [nodes, edges, flowName, initialData]);
+    return nodesChanged || edgesChanged || flowNameChanged || noteChanged;
+  }, [nodes, edges, flowName, noteContent, initialData]);
 
   useEffect(() => {
     if (initialData) {
       setIsUnsaved(isDataChanged());
     }
-  }, [nodes, edges, flowName, initialData, isDataChanged]);
+  }, [nodes, edges, flowName, noteContent, initialData, isDataChanged]);
 
   const onInit = useCallback((reactFlowInstance: ReactFlowInstance) => {
     setRfInstance(reactFlowInstance);
@@ -448,7 +457,8 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       const flow = { nodes: currentNodes, edges: currentEdges, viewport };
       const payload = {
         name: flowName,
-        flow_data: flow
+        flow_data: flow,
+        note: noteContent
       };
 
       try {
@@ -477,7 +487,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           if (result.data && result.data[0]) {
             setFlowId(result.data[0].id);
           }
-          setInitialData({ nodes: currentNodes, edges: currentEdges, flowName });
+          setInitialData({ nodes: currentNodes, edges: currentEdges, flowName, note: noteContent });
           setIsUnsaved(false);
           return true;
         } else {
@@ -491,7 +501,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       }
     }
     return false;
-  }, [rfInstance, flowName, flowId]);
+  }, [rfInstance, flowName, flowId, noteContent]);
 
   const edgeTypes = useMemo(() => ({
     custom: CustomEdge,
@@ -620,6 +630,22 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     }
   }, [editingNodeId, newNodeNumber, updateNodeData]);
 
+  const handleNoteButtonClick = () => {
+    setShowNotePanel(true);
+  };
+
+  const handleNotePanelClose = () => {
+    setShowNotePanel(false);
+  };
+
+  const handleSlideInNoteButtonClick = () => {
+    setShowSlideInNotePanel(true);
+  };
+
+  const handleSlideInNotePanelClose = () => {
+    setShowSlideInNotePanel(false);
+  };
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -655,7 +681,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             placeholder="Flow Name"
             className="p-2 border rounded"
           />
-          <Button onClick={saveToSupabase}>Save Flow</Button>
+          <Button onClick={saveToSupabase}>保存</Button>
           {/* ダウンロードボタンを追加 */}
           <Button
             variant="ghost"
@@ -665,6 +691,15 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           >
             <Download className="h-4 w-4 mr-1" />
             ダウンロード
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center border border-gray-300"
+            onClick={handleNoteButtonClick}
+          >
+            <StickyNote className="h-4 w-4 mr-1" />
+            ノート
           </Button>
         </div>
       )}
@@ -681,7 +716,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             placeholder="Flow Name"
             className="p-2 border rounded"
           />
-          <Button onClick={saveToSupabase}>Save Flow</Button>
+          <Button onClick={saveToSupabase}>保存</Button>
           {/* ダウンロードボタンを追加 */}
           <Button
             variant="ghost"
@@ -691,6 +726,15 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           >
             <Download className="h-4 w-4 mr-1" />
             ダウンロード
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center border border-gray-300"
+            onClick={handleSlideInNoteButtonClick}
+          >
+            <StickyNote className="h-4 w-4 mr-1" />
+            ノート
           </Button>
         </div>
       )}
@@ -903,6 +947,25 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           handleDownloadAreaCancel={handleDownloadAreaCancel}
           reactFlowWrapper={reactFlowWrapper}
         />
+      )}
+
+      {showNotePanel && (
+        <div className="fixed inset-y-0 right-0 w-80 z-50 transition-transform duration-300 ease-in-out transform translate-x-0">
+          <NotePanel
+            noteContent={noteContent}
+            setNoteContent={setNoteContent}
+            onClose={handleNotePanelClose}
+          />
+        </div>
+      )}
+      {showSlideInNotePanel && (
+        <div className="fixed inset-y-0 right-0 w-80 z-50 transition-transform duration-300 ease-in-out transform translate-x-0">
+          <NotePanel
+            noteContent={noteContent}
+            setNoteContent={setNoteContent}
+            onClose={handleSlideInNotePanelClose}
+          />
+        </div>
       )}
     </div>
   );
