@@ -647,7 +647,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             className="flex items-center space-x-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span>Back to List</span>
           </Button>
           <input
             type="text"
@@ -671,6 +670,10 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       )}
       {isSlideIn && (
         <div className="absolute top-4 left-4 z-10 flex items-center space-x-2">
+          <Button variant="outline" size="sm" onClick={() => handleClose('closeSlideIn')} className="flex items-center space-x-2">
+            <ChevronRight className="h-4 w-4" />
+            <span>閉じる</span>
+          </Button>
           <input
             type="text"
             value={flowName}
@@ -679,10 +682,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             className="p-2 border rounded"
           />
           <Button onClick={saveToSupabase}>Save Flow</Button>
-          <Button variant="outline" size="sm" onClick={() => handleClose('closeSlideIn')} className="flex items-center">
-            <ChevronRight className="h-4 w-4 mr-1" />
-            <span>Close</span>
-          </Button>
           {/* ダウンロードボタンを追加 */}
           <Button
             variant="ghost"
