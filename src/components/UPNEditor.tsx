@@ -642,19 +642,11 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
   }, [editingNodeId, newNodeNumber, updateNodeData]);
 
   const handleNoteButtonClick = () => {
-    setShowNotePanel(true);
-  };
-
-  const handleNotePanelClose = () => {
-    setShowNotePanel(false);
+    setShowNotePanel(prevState => !prevState);
   };
 
   const handleSlideInNoteButtonClick = () => {
-    setShowSlideInNotePanel(true);
-  };
-
-  const handleSlideInNotePanelClose = () => {
-    setShowSlideInNotePanel(false);
+    setShowSlideInNotePanel(prevState => !prevState);
   };
 
   const addStickyNote = useCallback(() => {
@@ -1021,7 +1013,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           <NotePanel
             noteContent={noteContent}
             setNoteContent={setNoteContent}
-            onClose={handleNotePanelClose}
+            onClose={() => setShowNotePanel(false)}
           />
         </div>
       )}
@@ -1030,7 +1022,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           <NotePanel
             noteContent={noteContent}
             setNoteContent={setNoteContent}
-            onClose={handleSlideInNotePanelClose}
+            onClose={() => setShowSlideInNotePanel(false)}
           />
         </div>
       )}
