@@ -783,6 +783,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           onClick={closeContextMenu}
           connectionMode={ConnectionMode.Loose}
           onInit={onInit}
+          minZoom={0.125}
         >
           <Controls />
           <Background />
