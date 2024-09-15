@@ -59,6 +59,7 @@ import DownloadArea from './DownloadArea';
 import DownloadModal from './DownloadModal';
 import { handleDownload as handleDownloadUtil } from '../utils/downloadUtils';
 import NotePanel from './NotePanel';
+import StickyNoteNode from './nodes/StickyNoteNode';
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -326,7 +327,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     [setEdges]
   );
 
-  const [contextMenuType, setContextMenuType] = useState<'canvas' | 'activity' | 'edge'>('canvas');
+  const [contextMenuType, setContextMenuType] = useState<'canvas' | 'activity' | 'edge' | 'stickyNote'>('canvas');
 
   const deleteEdge = useCallback((edgeId: string) => {
     setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
@@ -353,17 +354,13 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       event.preventDefault();
       event.stopPropagation();
       if (rfInstance) {
-        const position = screenToFlowPosition({
-          x: event.clientX,
-          y: event.clientY,
-        });
-
         const targetElement = event.target as HTMLElement;
         const node = targetElement.closest('.react-flow__node');
         const edge = rfInstance.getEdges().find(e => {
           const edgeElement = document.querySelector(`[data-testid="rf__edge-${e.id}"]`);
           if (edgeElement) {
             const edgeRect = edgeElement.getBoundingClientRect();
+            const position = rfInstance.project({ x: event.clientX, y: event.clientY });
             return (
               position.x >= edgeRect.left - 8 &&
               position.x <= edgeRect.right + 8 &&
@@ -377,11 +374,15 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         const nodeId = node ? node.getAttribute('data-id') || undefined : undefined;
         const edgeId = edge ? edge.id : undefined;
         const isActivityNode = node?.classList.contains('react-flow__node-activity');
+        const isStickyNoteNode = node?.classList.contains('react-flow__node-stickyNote');
         
         if (edge) {
           setContextMenuType('edge');
         } else if (isActivityNode) {
           setContextMenuType('activity');
+          setSelectedNodeId(nodeId || null);
+        } else if (isStickyNoteNode) {
+          setContextMenuType('stickyNote');
           setSelectedNodeId(nodeId || null);
         } else {
           setContextMenuType('canvas');
@@ -396,7 +397,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         });
       }
     },
-    [setContextMenu, rfInstance, screenToFlowPosition]
+    [rfInstance]
   );
 
   const closeContextMenu = useCallback(() => {
@@ -409,7 +410,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     const newNode = {
       id: newNodeId,
       type: type,
-      position: { x: contextMenu.x, y: contextMenu.y },
+      position: rfInstance ? rfInstance.project({ x: contextMenu.x, y: contextMenu.y }) : { x: 0, y: 0 },
       data: {
         label: type === 'start' ? 'Start' : type === 'end' ? 'End' : '',
         verbPhrase: '',
@@ -439,7 +440,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     };
     setNodes((nds) => nds.concat(newNode));
     closeContextMenu();
-  }, [nodes, contextMenu, closeContextMenu]);
+  }, [nodes, contextMenu, closeContextMenu, rfInstance]);
 
   const updateNodeData = useCallback((nodeId: string, newData: any) => {
     setNodes((nds) =>
@@ -449,7 +450,12 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
           : node
       )
     );
+    setIsUnsaved(true);  // ノードデータが更新されたら未保存状態にする
   }, [setNodes]);
+
+  const handleStickyNoteChange = useCallback((id: string, content: string) => {
+    updateNodeData(id, { content });
+  }, [updateNodeData]);
 
   const saveToSupabase = useCallback(async (): Promise<boolean> => {
     if (rfInstance) {
@@ -646,6 +652,34 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     setShowSlideInNotePanel(false);
   };
 
+  const addStickyNote = useCallback(() => {
+    const newNodeId = `memo-${Date.now()}`;
+    const newNode = {
+      id: newNodeId,
+      type: 'stickyNote',
+      position: rfInstance ? rfInstance.project({ x: contextMenu.x, y: contextMenu.y }) : { x: 0, y: 0 },
+      data: {
+        content: '',
+        onChange: (id: string, content: string) => {
+          setNodes((nds) =>
+            nds.map((node) =>
+              node.id === id
+                ? { ...node, data: { ...node.data, content } }
+                : node
+            )
+          );
+        },
+      },
+    };
+    setNodes((nds) => nds.concat(newNode));
+    closeContextMenu();
+  }, [rfInstance, contextMenu, setNodes, closeContextMenu]);
+
+  const deleteStickyNote = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+    setIsUnsaved(true);
+  }, [setNodes]);
+
   const nodeTypes: NodeTypes = useMemo(() => ({
     activity: (props) => (
       <ActivityNode
@@ -660,7 +694,17 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     ),
     start: StartNode,
     end: EndNode,
-  }), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu]);
+    stickyNote: (props) => (
+      <StickyNoteNode
+        {...props}
+        data={{
+          ...props.data,
+          onChange: handleStickyNoteChange,
+          onContextMenu: (event) => onContextMenu(event),
+        }}
+      />
+    ),
+  }), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu, handleStickyNoteChange]);
 
   return (
     <div className="h-screen flex flex-col relative">
@@ -778,6 +822,12 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                   <DropdownMenuItem onSelect={() => { addNode('end'); closeContextMenu(); }}>
                     エンドノードを追加
                   </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => {
+                    addStickyNote();
+                    closeContextMenu();
+                  }}>
+                    メモを追加
+                  </DropdownMenuItem>
                 </>
               ) : contextMenuType === 'activity' ? (
                 <>
@@ -804,6 +854,17 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
                   <DropdownMenuItem onSelect={() => {
                     if (contextMenu.nodeId) {
                       deleteNode(contextMenu.nodeId);
+                    }
+                    closeContextMenu();
+                  }}>
+                    削除
+                  </DropdownMenuItem>
+                </>
+              ) : contextMenuType === 'stickyNote' ? (
+                <>
+                  <DropdownMenuItem onSelect={() => {
+                    if (contextMenu.nodeId) {
+                      deleteStickyNote(contextMenu.nodeId);
                     }
                     closeContextMenu();
                   }}>
