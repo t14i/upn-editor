@@ -13,18 +13,18 @@ import ReactFlow, {
   EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import ActivityNode from './nodes/ActivityNode';
-import CustomEdge from './edges/CustomEdge';
-import StartNode from './nodes/StartNode';
-import EndNode from './nodes/EndNode';
-import SlideInPanel from './SlideInPanel';
-import StickyNoteNode from './nodes/StickyNoteNode';
-import UPNContextMenu from './UPNEditor/components/UPNContextMenu';
-import UPNDialogManager from './UPNEditor/components/UPNDialogManager';
-import { useNodeEdgeManagement } from './UPNEditor/hooks/useNodeEdgeManagement';
-import { useFlowPersistence } from './UPNEditor/hooks/useFlowPersistence';
-import { useViewportManagement } from './UPNEditor/hooks/useViewportManagement';
-import UPNToolbar from './UPNEditor/components/UPNToolbar';
+import ActivityNode from '@/components/nodes/ActivityNode';
+import CustomEdge from '@/components/edges/CustomEdge';
+import StartNode from '@/components/nodes/StartNode';
+import EndNode from '@/components/nodes/EndNode';
+import SlideInPanel from '@/components/SlideInPanel';
+import StickyNoteNode from '@/components/nodes/StickyNoteNode';
+import UPNContextMenu from './components/UPNContextMenu';
+import UPNDialogManager from './components/UPNDialogManager';
+import { useNodeEdgeManagement } from './hooks/useNodeEdgeManagement';
+import { useFlowPersistence } from './hooks/useFlowPersistence';
+import { useViewportManagement } from './hooks/useViewportManagement';
+import UPNToolbar from './components/UPNToolbar';
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const {

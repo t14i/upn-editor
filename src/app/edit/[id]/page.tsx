@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import UPNEditor from '@/components/UPNEditor';
+import UPNEditor from '@/components/UPNEditor/UPNEditor';
 
 export default function EditFlow() {
   const params = useParams();

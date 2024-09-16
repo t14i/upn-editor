@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { StickyNote } from 'lucide-react';
-import NotePanel from '../../NotePanel';
+import NotePanel from './NotePanel';
 
 interface UPNNoteManagerProps {
   noteContent: string;
