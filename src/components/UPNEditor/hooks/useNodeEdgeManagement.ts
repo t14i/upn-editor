@@ -4,12 +4,13 @@ import {
   Edge,
   Connection,
   addEdge,
-  updateEdge,
   OnConnect,
   useNodesState,
   useEdgesState,
   ReactFlowInstance,
   MarkerType,
+  applyEdgeChanges,
+  EdgeChange,
 } from 'reactflow';
 
 // AdditionalInfo の型定義をインラインで行う
@@ -70,7 +71,23 @@ export const useNodeEdgeManagement = (initialNodes: Node[] = [], initialEdges: E
 
   const onEdgeUpdate = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
-      setEdges((els) => updateEdge(oldEdge, newConnection, els));
+      setEdges((els) => {
+        const changes: EdgeChange[] = [
+          {
+            id: oldEdge.id,
+            type: 'remove',
+          },
+          {
+            item: {
+              ...oldEdge,
+              ...newConnection,
+              id: `e${newConnection.source}-${newConnection.target}`,
+            },
+            type: 'add',
+          },
+        ];
+        return applyEdgeChanges(changes, els);
+      });
     },
     [setEdges]
   );

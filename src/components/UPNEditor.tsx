@@ -3,14 +3,14 @@ import { useRouter } from 'next/navigation';
 import ReactFlow, {
   Controls,
   Background,
-  addEdge,
   NodeTypes,
-  MarkerType,
   OnConnectStartParams,
   ConnectingHandle,
   ReactFlowProvider,
   ConnectionMode,
   Connection,
+  applyEdgeChanges,
+  EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import ActivityNode from './nodes/ActivityNode';
@@ -271,12 +271,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       setDrilldownFlowId(null);
     }
   }, [isUnsaved, handleSaveFlow]);
-
-  const handleSlideOut = useCallback(() => {
-    if (onClose) {
-      onClose();
-    }
-  }, [onClose]);
 
   const handleClose = useCallback(async (action: 'backToList' | 'closeSlideIn') => {
     if (isUnsaved) {
