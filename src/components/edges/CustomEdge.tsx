@@ -73,6 +73,7 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
       />
       <EdgeLabelRenderer>
         <div
+          id={id}
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
@@ -84,7 +85,7 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
             minWidth: '80px',
             textAlign: 'center',
           }}
-          className="nodrag nopan"
+          className="react-flow__edgelabel nodrag nopan"
         >
           {isEditing ? (
             <input

@@ -171,38 +171,39 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       event.stopPropagation();
       if (rfInstance) {
         const targetElement = event.target as HTMLElement;
-        const node = targetElement.closest('.react-flow__node');
-        const edge = targetElement.closest('.react-flow__edge');
+        console.log('targetElement:', targetElement);
 
         let nodeId: string | undefined;
         let edgeId: string | undefined;
 
-        if (node) {
-          nodeId = node.getAttribute('data-id') || undefined;
-        } else if (edge) {
-          // エッジIDの取得方法を変更
-          edgeId = edge.getAttribute('data-id') || edge.id || undefined;
-          if (!edgeId) {
-            const edgeElement = edge as SVGElement;
-            const classes = edgeElement.getAttribute('class')?.split(' ') || [];
-            const edgeClass = classes.find(c => c.startsWith('react-flow__edge-'));
-            edgeId = edgeClass ? edgeClass.split('-').pop() : undefined;
-          }
+        const edge = targetElement.closest('.react-flow__edge-custom');
+        const edgeLabel = targetElement.closest('.react-flow__edgelabel')
+        if (edge) {
+          edgeId = edge.id || edge.querySelector('.react-flow__edge-path')?.id || undefined;
+        } else if (edgeLabel) {
+          edgeId = edgeLabel.id || undefined;
         }
 
-        console.log('Context menu opened for:', { nodeId, edgeId, edge }); // デバッグログを追加
+        const node = targetElement.closest('.react-flow__node');
+        if (node) {
+          nodeId = node.getAttribute('data-id') || undefined;
+        }
+        const isActivityNode = node?.classList.contains('react-flow__node-activity');
+        const isStickyNoteNode = node?.classList.contains('react-flow__node-stickyNote');
 
-        if (edge) {
+        if (edgeId) {
           setContextMenuType('edge');
-        } else if (node?.classList.contains('react-flow__node-activity')) {
+        } else if (isActivityNode) {
           setContextMenuType('activity');
           setSelectedNodeId(nodeId || null);
-        } else if (node?.classList.contains('react-flow__node-stickyNote')) {
+        } else if (isStickyNoteNode) {
           setContextMenuType('stickyNote');
           setSelectedNodeId(nodeId || null);
         } else {
           setContextMenuType('canvas');
         }
+
+        console.log('Context menu opened for:', { nodeId, edgeId }); // デバッグログを追加
 
         setContextMenu({
           visible: true,

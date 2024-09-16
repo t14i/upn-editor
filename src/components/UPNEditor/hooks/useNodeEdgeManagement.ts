@@ -137,22 +137,20 @@ export const useNodeEdgeManagement = (initialNodes: Node[] = [], initialEdges: E
     setNodes((nds) => nds.filter((node) => node.id !== nodeId));
   }, [setNodes]);
 
-  const reverseEdge = useCallback((edgeId: string) => {
+  const reverseEdge = useCallback((edgeId: string | undefined) => {
     console.log('Reversing edge:', edgeId); // デバッグログ
+    if (!edgeId) {
+      console.error('Edge ID is undefined');
+      return;
+    }
     setEdges((eds) => {
-      let edgeToReverse;
-      if (edgeId === 'custom') {
-        // 'custom'の場合、最後に追加されたエッジを逆転させる
-        edgeToReverse = eds[eds.length - 1];
-      } else {
-        edgeToReverse = eds.find(edge => edge.id === edgeId);
-      }
+      const edgeToReverse = eds.find(edge => edge.id === edgeId);
       if (!edgeToReverse) {
         console.error(`Edge with id ${edgeId} not found`);
         return eds;
       }
       const updatedEdges = eds.map((edge) => {
-        if (edge === edgeToReverse) {
+        if (edge.id === edgeId) {
           console.log('Original edge:', edge); // デバッグログ
           const { source, target, sourceHandle, targetHandle } = edge;
           const reversedEdge = {
