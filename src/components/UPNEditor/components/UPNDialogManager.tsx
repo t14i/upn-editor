@@ -25,11 +25,6 @@ interface UPNDialogManagerProps {
   setShowSaveDialog: (show: boolean) => void;
   handleSaveAndClose: () => void;
   handleCloseWithoutSaving: () => void;
-  showLinkDialog: boolean;
-  setShowLinkDialog: (show: boolean) => void;
-  newLink: { name: string; url: string };
-  setNewLink: (link: { name: string; url: string }) => void;
-  handleAddLink: () => void;
   showEditNumberDialog: boolean;
   setShowEditNumberDialog: (show: boolean) => void;
   newNodeNumber: number | null;
@@ -42,11 +37,6 @@ const UPNDialogManager: React.FC<UPNDialogManagerProps> = ({
   setShowSaveDialog,
   handleSaveAndClose,
   handleCloseWithoutSaving,
-  showLinkDialog,
-  setShowLinkDialog,
-  newLink,
-  setNewLink,
-  handleAddLink,
   showEditNumberDialog,
   setShowEditNumberDialog,
   newNodeNumber,
@@ -73,41 +63,6 @@ const UPNDialogManager: React.FC<UPNDialogManagerProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>関連リンクを追加</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="link-name" className="text-right">
-                リンク名
-              </Label>
-              <Input
-                id="link-name"
-                value={newLink.name}
-                onChange={(e) => setNewLink({ ...newLink, name: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="link-url" className="text-right">
-                URL
-              </Label>
-              <Input
-                id="link-url"
-                value={newLink.url}
-                onChange={(e) => setNewLink({ ...newLink, url: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleAddLink}>追加</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={showEditNumberDialog} onOpenChange={setShowEditNumberDialog}>
         <DialogContent>

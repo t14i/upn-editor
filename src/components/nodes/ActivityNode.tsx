@@ -22,6 +22,7 @@ interface ActivityNodeProps {
   onOpenDrilldown: (flowId: string) => void;
   onAddDrilldown: () => void;
   onContextMenu: (event: React.MouseEvent) => void;
+  onEditLinks: (nodeId: string, links: { name: string; url: string }[]) => void;
 }
 
 // タグの型を定義
@@ -49,7 +50,8 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
   onChange, 
   onOpenDrilldown, 
   onAddDrilldown,
-  onContextMenu
+  onContextMenu,
+  onEditLinks
 }) => {
   const [isEditing, setIsEditing] = useState(data.verbPhrase === '');
   const [text, setText] = useState(data.verbPhrase);
@@ -177,6 +179,10 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
     } else {
       onAddDrilldown();
     }
+  };
+
+  const handleEditLinks = () => {
+    onEditLinks(id, data.links || []);
   };
 
   return (
@@ -331,22 +337,24 @@ const ActivityNode: React.FC<ActivityNodeProps> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[220px]">
-          {data.links && data.links.length > 0 ? (
-            <div className="grid gap-4">
-              {data.links.map((link, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Link className="h-4 w-4" />
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                    {link.name}
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-2 text-gray-500">
-              関連情報はありません
-            </div>
-          )}
+          <div className="grid gap-4">
+            {data.links && data.links.length > 0 ? (
+              <>
+                {data.links.map((link, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Link className="h-4 w-4" />
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      {link.name}
+                    </a>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div className="text-center py-2 text-gray-500">
+                関連情報はありません
+              </div>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
       <div className="flex flex-col items-center justify-center px-4 py-3 border-b border-gray-200 h-48 activity-text">

@@ -79,15 +79,6 @@ const UPNContextMenu: React.FC<UPNContextMenuProps> = ({
         ) : contextMenuType === 'activity' ? (
           <>
             <DropdownMenuItem onSelect={() => {
-              setShowLinkDialog(true);
-              closeContextMenu();
-            }}>
-              関連リンクを追加
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
-              ドリルダウンを追加
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => {
               if (contextMenu.nodeId) {
                 setEditingNodeId(contextMenu.nodeId);
                 const currentNode = nodes.find(node => node.id === contextMenu.nodeId);
@@ -97,6 +88,15 @@ const UPNContextMenu: React.FC<UPNContextMenuProps> = ({
               closeContextMenu();
             }}>
               番号を編集
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => {
+              setShowLinkDialog(true);
+              closeContextMenu();
+            }}>
+              関連リンクを編集
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => handleAddDrillDown(contextMenu.nodeId || '')}>
+              ドリルダウンを追加
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => {
               if (contextMenu.nodeId) {

@@ -73,8 +73,8 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
 
   const router = useRouter();
 
-  const [showLinkDialog, setShowLinkDialog] = useState(false);
-  const [newLink, setNewLink] = useState({ name: '', url: '' });
+  const [showEditLinksDialog, setShowEditLinksDialog] = useState(false);
+  const [selectedNodeLinks, setSelectedNodeLinks] = useState<{ name: string; url: string; }[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const [showEditNumberDialog, setShowEditNumberDialog] = useState(false);
@@ -306,26 +306,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     }
   }, [closeAction, router, onClose]);
 
-  const handleAddLink = useCallback(() => {
-    if (selectedNodeId && newLink.name && newLink.url) {
-      setNodes((nds) =>
-        nds.map((node) =>
-          node.id === selectedNodeId
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  links: [...(node.data.links || []), newLink],
-                },
-              }
-            : node
-        )
-      );
-      setNewLink({ name: '', url: '' });
-      setShowLinkDialog(false);
-    }
-  }, [selectedNodeId, newLink, setNodes]);
-
   const handleEditNodeNumber = useCallback(() => {
     if (editingNodeId !== null && newNodeNumber !== null) {
       updateNodeData(editingNodeId, { nodeNumber: newNodeNumber });
@@ -334,6 +314,19 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
       setNewNodeNumber(null);
     }
   }, [editingNodeId, newNodeNumber, updateNodeData]);
+
+  const handleEditLinks = useCallback((nodeId: string, links: { name: string; url: string; }[]) => {
+    setSelectedNodeId(nodeId);
+    setSelectedNodeLinks(links);
+    setShowEditLinksDialog(true);
+  }, []);
+
+  const handleSaveLinks = useCallback((links: { name: string; url: string; }[]) => {
+    if (selectedNodeId) {
+      updateNodeData(selectedNodeId, { links });
+    }
+    setShowEditLinksDialog(false);
+  }, [selectedNodeId, updateNodeData]);
 
   const [drilldownFlowId, setDrilldownFlowId] = useState<string | null>(null);
   const [showSlideInPanel, setShowSlideInPanel] = useState(false);
@@ -347,8 +340,9 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     handleOpenDrilldown,
     handleAddDrillDown,
     onContextMenu,
-    handleStickyNoteChange
-  ), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu, handleStickyNoteChange]);
+    handleStickyNoteChange,
+    handleEditLinks
+  ), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu, handleStickyNoteChange, handleEditLinks]);
 
   const handleAddNode = useCallback((type: 'activity' | 'start' | 'end') => {
     const position = getFlowPosition(contextMenu.x, contextMenu.y);
@@ -401,7 +395,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
             contextMenuType={contextMenuType}
             addNode={handleAddNode}
             addStickyNote={handleAddStickyNote}
-            setShowLinkDialog={setShowLinkDialog}
+            setShowLinkDialog={setShowEditLinksDialog}
             handleAddDrillDown={handleAddDrillDown}
             setEditingNodeId={setEditingNodeId}
             setNewNodeNumber={setNewNodeNumber}
@@ -425,16 +419,17 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         setShowSaveDialog={setShowSaveDialog}
         handleSaveAndClose={handleSaveAndClose}
         handleCloseWithoutSaving={handleCloseWithoutSaving}
-        showLinkDialog={showLinkDialog}
-        setShowLinkDialog={setShowLinkDialog}
-        newLink={newLink}
-        setNewLink={setNewLink}
-        handleAddLink={handleAddLink}
         showEditNumberDialog={showEditNumberDialog}
         setShowEditNumberDialog={setShowEditNumberDialog}
         newNodeNumber={newNodeNumber}
         setNewNodeNumber={setNewNodeNumber}
         handleEditNodeNumber={handleEditNodeNumber}
+      />
+      <EditLinksModal
+        isOpen={showEditLinksDialog}
+        onClose={() => setShowEditLinksDialog(false)}
+        links={selectedNodeLinks}
+        onSave={handleSaveLinks}
       />
     </div>
   );
