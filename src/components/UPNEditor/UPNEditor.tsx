@@ -10,6 +10,7 @@ import ReactFlow, {
   Connection,
   applyEdgeChanges,
   EdgeChange,
+  Edge,  // Edge型をインポート
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import SlideInPanel from '@/components/SlideInPanel';
@@ -87,7 +88,7 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
         const flowData = await fetchFlow(initialFlowId);
         if (flowData) {
           // エッジにCustomEdgeタイプを設定
-          const updatedEdges = flowData.edges.map(edge => ({
+          const updatedEdges = flowData.edges.map((edge: Edge) => ({
             ...edge,
             type: 'custom',
             data: {

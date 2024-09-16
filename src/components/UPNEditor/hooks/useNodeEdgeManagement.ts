@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Node,
   Edge,
@@ -80,8 +80,11 @@ export const useNodeEdgeManagement = (initialNodes: Node[] = [], initialEdges: E
           {
             item: {
               ...oldEdge,
-              ...newConnection,
-              id: `e${newConnection.source}-${newConnection.target}`,
+              source: newConnection.source || oldEdge.source,
+              target: newConnection.target || oldEdge.target,
+              sourceHandle: newConnection.sourceHandle || oldEdge.sourceHandle,
+              targetHandle: newConnection.targetHandle || oldEdge.targetHandle,
+              id: `e${newConnection.source || oldEdge.source}-${newConnection.target || oldEdge.target}`,
             },
             type: 'add',
           },
@@ -199,7 +202,7 @@ export const useNodeEdgeManagement = (initialNodes: Node[] = [], initialEdges: E
     setEdges((eds) => eds.filter((edge) => edge.id !== edgeId));
   }, [setEdges]);
 
-  return {
+  return useMemo(() => ({
     nodes,
     edges,
     setNodes,
@@ -218,5 +221,24 @@ export const useNodeEdgeManagement = (initialNodes: Node[] = [], initialEdges: E
     deleteEdge,
     rfInstance,
     onInit,
-  };
+  }), [
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    onEdgeUpdate,
+    onEdgeLabelChange,
+    updateNodeData,
+    addNode,
+    deleteNode,
+    addStickyNote,
+    deleteStickyNote,
+    reverseEdge,
+    deleteEdge,
+    rfInstance,
+    onInit,
+  ]);
 };
