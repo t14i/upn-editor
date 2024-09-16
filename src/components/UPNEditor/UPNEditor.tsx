@@ -3,7 +3,6 @@ import { useRouter } from 'next/navigation';
 import ReactFlow, {
   Controls,
   Background,
-  NodeTypes,
   OnConnectStartParams,
   ConnectingHandle,
   ReactFlowProvider,
@@ -13,18 +12,16 @@ import ReactFlow, {
   EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import ActivityNode from '@/components/nodes/ActivityNode';
-import CustomEdge from '@/components/edges/CustomEdge';
-import StartNode from '@/components/nodes/StartNode';
-import EndNode from '@/components/nodes/EndNode';
 import SlideInPanel from '@/components/SlideInPanel';
-import StickyNoteNode from '@/components/nodes/StickyNoteNode';
 import UPNContextMenu from './components/UPNContextMenu';
 import UPNDialogManager from './components/UPNDialogManager';
 import { useNodeEdgeManagement } from './hooks/useNodeEdgeManagement';
 import { useFlowPersistence } from './hooks/useFlowPersistence';
 import { useViewportManagement } from './hooks/useViewportManagement';
 import UPNToolbar from './components/UPNToolbar';
+import EditLinksModal from './components/EditLinksModal';
+import { createNodeTypes } from './nodeTypes';
+import { edgeTypes } from './edgeTypes';
 
 const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isSlideIn = false, onClose }) => {
   const {
@@ -338,10 +335,6 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     }
   }, [editingNodeId, newNodeNumber, updateNodeData]);
 
-  const edgeTypes = useMemo(() => ({
-    custom: CustomEdge,
-  }), []);
-
   const [drilldownFlowId, setDrilldownFlowId] = useState<string | null>(null);
   const [showSlideInPanel, setShowSlideInPanel] = useState(false);
 
@@ -349,31 +342,13 @@ const UPNEditorContent: React.FC<UPNEditorProps> = ({ flowId: initialFlowId, isS
     updateNodeData(id, { content });
   }, [updateNodeData]);
 
-  const nodeTypes: NodeTypes = useMemo(() => ({
-    activity: (props) => (
-      <ActivityNode
-        {...props}
-        onChange={(newText, newAdditionalInfo) =>
-          updateNodeData(props.id, { verbPhrase: newText, additionalInfo: newAdditionalInfo })
-        }
-        onOpenDrilldown={handleOpenDrilldown}
-        onAddDrilldown={() => handleAddDrillDown(props.id)}
-        onContextMenu={(event) => onContextMenu(event)}
-      />
-    ),
-    start: StartNode,
-    end: EndNode,
-    stickyNote: (props) => (
-      <StickyNoteNode
-        {...props}
-        data={{
-          ...props.data,
-          onChange: handleStickyNoteChange,
-          onContextMenu: (event) => onContextMenu(event),
-        }}
-      />
-    ),
-  }), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu, handleStickyNoteChange]);
+  const nodeTypes = useMemo(() => createNodeTypes(
+    updateNodeData,
+    handleOpenDrilldown,
+    handleAddDrillDown,
+    onContextMenu,
+    handleStickyNoteChange
+  ), [updateNodeData, handleOpenDrilldown, handleAddDrillDown, onContextMenu, handleStickyNoteChange]);
 
   const handleAddNode = useCallback((type: 'activity' | 'start' | 'end') => {
     const position = getFlowPosition(contextMenu.x, contextMenu.y);
