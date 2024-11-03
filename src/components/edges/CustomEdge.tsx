@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { EdgeProps, getSmoothStepPath, EdgeLabelRenderer } from 'reactflow';
 
 interface CustomEdgeData {
@@ -29,18 +29,33 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
 
   const [isEditing, setIsEditing] = useState(false);
   const [label, setLabel] = useState(data?.label || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+      textareaRef.current.focus();
+    }
+  }, [isEditing, label]);
 
   const onEdgeClick = useCallback((evt: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     evt.stopPropagation();
     setIsEditing(true);
   }, []);
 
-  const onLabelChange = useCallback((evt: React.ChangeEvent<HTMLInputElement>) => {
+  const onLabelChange = useCallback((evt: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLabel(evt.target.value);
+    evt.target.style.height = 'auto';
+    evt.target.style.height = `${evt.target.scrollHeight}px`;
   }, []);
 
-  const onLabelKeyDown = useCallback((evt: React.KeyboardEvent<HTMLInputElement>) => {
+  const onLabelKeyDown = useCallback((evt: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (evt.key === 'Enter' && evt.shiftKey) {
+      return; // Shift + Enterの場合は改行を許可
+    }
     if (evt.key === 'Enter') {
+      evt.preventDefault();
       setIsEditing(false);
       data?.onLabelChange(id, label);
     }
@@ -64,7 +79,7 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
         id={id}
         style={{
           ...style,
-          strokeWidth: 3,  // 視覚的な太さを3に設定
+          strokeWidth: 3,
           stroke: '#555',
         }}
         className="react-flow__edge-path"
@@ -88,24 +103,36 @@ const CustomEdge: React.FC<EdgeProps<CustomEdgeData>> = ({
           className="react-flow__edgelabel nodrag nopan"
         >
           {isEditing ? (
-            <input
+            <textarea
+              ref={textareaRef}
               value={label}
               onChange={onLabelChange}
               onBlur={onLabelBlur}
               onKeyDown={onLabelKeyDown}
               className="nodrag nopan"
-              autoFocus
               style={{
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
                 width: '100%',
+                resize: 'none',
                 textAlign: 'center',
                 fontSize: 16,
+                overflow: 'hidden',
+                minHeight: '24px',
               }}
+              rows={1}
             />
           ) : (
-            <div onClick={onEdgeClick}>{label || 'エッジラベル'}</div>
+            <div 
+              onClick={onEdgeClick}
+              style={{
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              }}
+            >
+              {label || 'エッジラベル'}
+            </div>
           )}
         </div>
       </EdgeLabelRenderer>
